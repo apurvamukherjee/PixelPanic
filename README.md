@@ -5,6 +5,7 @@ Pictionary, but built for a friend group who wants to jump into a browser
 tab together with zero setup: no accounts, no installs, no lobby friction.
 Just a name, a room code, and a pencil.
 
+<<<<<<< HEAD
 Pixelpanic is guest-only and friend-group scale by design. There's no
 Redis, no horizontal scaling, no multi-tenant infrastructure — one small
 process runs the whole game for as many rooms as one server can hold, which
@@ -12,6 +13,9 @@ is exactly the right amount of infrastructure for a game meant to be played
 with people you actually know.
 
 ## The vision
+=======
+## Stack
+>>>>>>> 70f9e6a57957e486710e581caaaac7254a70321d
 
 Most drawing games either stay a toy (one game mode, no depth) or bolt on
 scale nobody asked for (accounts, matchmaking, leaderboards for strangers).
