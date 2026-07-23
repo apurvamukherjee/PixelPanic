@@ -4,6 +4,7 @@ import {
   type StrokeStartPayload,
   type StrokePointPayload,
   type StrokeEndPayload,
+  type DrawFillPayload,
 } from "@pixelpanic/shared";
 import type { RoomManager } from "../game/RoomManager.js";
 
@@ -18,6 +19,10 @@ export function registerDrawHandlers(socket: Socket, roomManager: RoomManager): 
 
   socket.on(ClientEvents.DRAW_STROKE_END, (payload: StrokeEndPayload) => {
     roomManager.getRoomBySocket(socket)?.relayStrokeEnd(socket.id, payload);
+  });
+
+  socket.on(ClientEvents.DRAW_FILL, (payload: DrawFillPayload) => {
+    roomManager.getRoomBySocket(socket)?.relayFill(socket.id, payload);
   });
 
   socket.on(ClientEvents.DRAW_CLEAR, () => {

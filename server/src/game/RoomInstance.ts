@@ -792,6 +792,14 @@ export class RoomInstance implements TournamentHost {
     this.broadcast(ServerEvents.DRAW_STROKE_END, payload);
   }
 
+  // A fill is a single instant op (no start/point/end sequence) — slot its
+  // id into the same undo history as strokes so DRAW_UNDO can remove either.
+  relayFill(socketId: string, payload: { strokeId: string }): void {
+    if (!this.isCurrentDrawer(socketId)) return;
+    this.currentTurnStrokeIds.push(payload.strokeId);
+    this.broadcast(ServerEvents.DRAW_FILL, payload);
+  }
+
   relayClear(socketId: string): void {
     if (!this.isCurrentDrawer(socketId)) return;
     this.currentTurnStrokeIds = [];

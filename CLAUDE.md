@@ -145,6 +145,13 @@ drawer" shown to the actual drawer again, this is the first place to check.
   to canvas width/height — never raw pixels — so phone-portrait and
   desktop-landscape canvases render the same strokes correctly. Denormalize
   only at the point of rendering (`remoteStrokeRenderer.ts`).
+- **Fill is a point+color op, not a stroke, but shares the undo history.**
+  `DrawTool` includes `"fill"`; unlike pencil/brush/eraser it has no drag
+  phase — `strokeCapture.ts` fires `onFill` straight from `pointerdown`. The
+  flood fill itself (`canvas/floodFill.ts`) runs independently on every
+  client against its own rasterized canvas rather than syncing pixel data —
+  see HANDOFF.md's "Additional features" section for the assumption that
+  relies on and why it hasn't been stress-tested yet.
 - **Every new socket event needs a typed payload in `shared/` first**,
   added to both `ClientEvents`/`ServerEvents` and a corresponding interface
   in `payloads.ts`, before any handler code is written.

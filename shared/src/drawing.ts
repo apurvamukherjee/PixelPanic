@@ -1,4 +1,4 @@
-export type DrawTool = "pencil" | "brush" | "eraser";
+export type DrawTool = "pencil" | "brush" | "eraser" | "fill";
 
 // Coordinates are normalized 0..1 relative to canvas width/height so a phone
 // in portrait and a desktop browser can render the exact same strokes at
@@ -25,6 +25,16 @@ export interface StrokePointPayload {
 
 export interface StrokeEndPayload {
   strokeId: string;
+}
+
+// Paint-bucket fill: a single instant point + color, not a dragged stroke.
+// `strokeId` (client-generated, like a stroke's) lets it slot into the same
+// undo history as strokes — RoomInstance.currentTurnStrokeIds and
+// DrawUndoPayload don't need to know "fill" is a different kind of op.
+export interface DrawFillPayload {
+  strokeId: string;
+  point: StrokePoint;
+  color: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

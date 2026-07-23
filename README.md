@@ -42,7 +42,8 @@ answer made along the way.
 - Public quick-match or a private room you share by link — 12 players per room
 - Configurable round count, draw time, and hint frequency
 - Live incremental stroke sync (everyone watches the drawing happen, not a
-  finished image) with pencil, brush, eraser, and a full color palette
+  finished image) with pencil, brush, eraser, paint-bucket fill, and a full
+  color palette
 - Progressive hint reveal and time-decayed scoring, so early correct guesses
   are worth more than last-second ones
 - Mod tools: votekick and mute, majority-gated server-side

@@ -7,9 +7,9 @@ linted, built, and REST-level smoke-tested, but **not yet human-playtested
 in a browser**. See the "Phase 2" section below for what to verify next.
 
 This doc is the "pick up where we left off" reference. For architecture and
-conventions, see [CLAUDE.md](CLAUDE.md) (Phase 1 only — still accurate, Phase
-2 isn't folded into it yet). For setup/run instructions, see
-[README.md](README.md).
+conventions, see [CLAUDE.md](CLAUDE.md) (Phase 1 + 2). For setup/run
+instructions, see [README.md](README.md). For what's next, see
+[PHASE3-PLAN.md](PHASE3-PLAN.md).
 
 ---
 
@@ -181,6 +181,33 @@ this environment (same limitation noted for Phase 1 below).
   showing raw icon-name text (webfont must load before first paint), and the
   whole thing on an actual phone (all styling was written from the mockups'
   markup, not visually verified against them).
+
+## Additional features (post-Phase 2, ad hoc)
+
+**Paint-bucket fill tool.** A `"fill"` `DrawTool` alongside pencil/brush/
+eraser — click the canvas to flood-fill a contiguous region with the
+selected color. Architecturally different from strokes: it's a single
+instant point+color op (`DrawFillPayload`, reusing the `strokeId` field name
+as a generic per-op undo id so it slots into the existing undo history
+alongside strokes — see the comment on `DrawFillPayload` in
+`shared/src/drawing.ts`), not a dragged sequence of points.
+
+**Important architectural note, not yet stress-tested:** the flood fill
+(`client/src/canvas/floodFill.ts`) runs independently on every client
+against its own locally-rasterized committed canvas — the fill point+color
+is broadcast, not pixel data, consistent with the existing "never full
+canvas frames" rule. This assumes every client's canvas is byte-identical at
+the moment of the fill, which is already an implicit assumption the whole
+committed-stroke-replay system makes (same Path2D + same canvas calls should
+render identically across browsers). It's untested whether that holds
+closely enough in practice for flood fill specifically — flood fill is far
+more sensitive to tiny antialiasing differences at region boundaries than
+strokes are, since a single differently-colored boundary pixel can change
+which region gets filled. Worth a specific check across different
+browsers/devices in the same room before trusting it; if it turns out to
+drift, the fallback is making fills server-authoritative (server holds a
+canonical raster and broadcasts the resulting delta or a small raster patch)
+rather than trusting independent client-side computation.
 
 ## Not yet verified — Phase 1
 

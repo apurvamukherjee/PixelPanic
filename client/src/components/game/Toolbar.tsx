@@ -9,6 +9,7 @@ const TOOLS: { tool: DrawTool; icon: string }[] = [
   { tool: "pencil", icon: "edit" },
   { tool: "brush", icon: "brush" },
   { tool: "eraser", icon: "ink_eraser" },
+  { tool: "fill", icon: "format_color_fill" },
 ];
 
 const COLORS = [
@@ -61,16 +62,19 @@ export function Toolbar() {
         ))}
       </div>
 
-      <div className="hidden h-8 w-px bg-white/10 md:block" />
-
-      <input
-        type="range"
-        min={2}
-        max={40}
-        value={size}
-        onChange={(e) => setSize(Number(e.target.value))}
-        className="w-24 accent-primary"
-      />
+      {tool !== "fill" && (
+        <>
+          <div className="hidden h-8 w-px bg-white/10 md:block" />
+          <input
+            type="range"
+            min={2}
+            max={40}
+            value={size}
+            onChange={(e) => setSize(Number(e.target.value))}
+            className="w-24 accent-primary"
+          />
+        </>
+      )}
 
       <div className="ml-auto flex gap-1">
         <button

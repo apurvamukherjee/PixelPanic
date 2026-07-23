@@ -5,6 +5,7 @@ import {
   type StrokeStartPayload,
   type StrokePointPayload,
   type StrokeEndPayload,
+  type DrawFillPayload,
   type DrawUndoPayload,
 } from "@pixelpanic/shared";
 import { useConnectionStore } from "../../store/useConnectionStore";
@@ -67,12 +68,14 @@ export function DrawingCanvas() {
     const onStart = (p: StrokeStartPayload) => rendererRef.current?.handleStart(p);
     const onPoints = (p: StrokePointPayload) => rendererRef.current?.handlePoints(p);
     const onEnd = (p: StrokeEndPayload) => rendererRef.current?.handleEnd(p);
+    const onFill = (p: DrawFillPayload) => rendererRef.current?.handleFill(p);
     const onClear = () => rendererRef.current?.handleClear();
     const onUndo = (p: DrawUndoPayload) => rendererRef.current?.handleUndo(p.strokeId);
 
     socket.on(ServerEvents.DRAW_STROKE_START, onStart);
     socket.on(ServerEvents.DRAW_STROKE_POINT, onPoints);
     socket.on(ServerEvents.DRAW_STROKE_END, onEnd);
+    socket.on(ServerEvents.DRAW_FILL, onFill);
     socket.on(ServerEvents.DRAW_CLEAR, onClear);
     socket.on(ServerEvents.DRAW_UNDO, onUndo);
 
@@ -80,6 +83,7 @@ export function DrawingCanvas() {
       socket.off(ServerEvents.DRAW_STROKE_START, onStart);
       socket.off(ServerEvents.DRAW_STROKE_POINT, onPoints);
       socket.off(ServerEvents.DRAW_STROKE_END, onEnd);
+      socket.off(ServerEvents.DRAW_FILL, onFill);
       socket.off(ServerEvents.DRAW_CLEAR, onClear);
       socket.off(ServerEvents.DRAW_UNDO, onUndo);
     };
@@ -102,6 +106,9 @@ export function DrawingCanvas() {
       },
       onEnd: (strokeId) => {
         socket.emit(ClientEvents.DRAW_STROKE_END, { strokeId });
+      },
+      onFill: (opId, point, color) => {
+        socket.emit(ClientEvents.DRAW_FILL, { strokeId: opId, point, color });
       },
     });
 

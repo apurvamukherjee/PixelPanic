@@ -8,6 +8,7 @@ export interface StrokeCaptureCallbacks {
   onStart: (strokeId: string, tool: DrawTool, color: string, size: number, point: StrokePoint) => void;
   onPoints: (strokeId: string, points: StrokePoint[]) => void;
   onEnd: (strokeId: string) => void;
+  onFill: (opId: string, point: StrokePoint, color: string) => void;
 }
 
 // Captures local pointer input as normalized (0..1) StrokePoints and batches
@@ -48,6 +49,15 @@ export function attachStrokeCapture(
   function handlePointerDown(e: PointerEvent) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
+
+    // Fill is a single instant click, not a dragged stroke — no pointermove
+    // tracking, no onEnd.
+    if (callbacks.getTool() === "fill") {
+      strokeStartTime = performance.now();
+      callbacks.onFill(uuidv4(), toNormalizedPoint(e), callbacks.getColor());
+      return;
+    }
+
     canvas.setPointerCapture(e.pointerId);
     drawing = true;
     strokeStartTime = performance.now();
