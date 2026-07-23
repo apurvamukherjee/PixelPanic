@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;family=Sora:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .podium-gradient-1 { background: linear-gradient(180deg, #ddb7ff 0%, #842bd2 100%); }
+        .podium-gradient-2 { background: linear-gradient(180deg, #5de6ff 0%, #00cbe6 100%); }
+        .podium-gradient-3 { background: linear-gradient(180deg, #ffafd3 0%, #e364a7 100%); }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "background": "#0b1326",
+                "surface": "#0b1326",
+                "on-tertiary": "#620040",
+                "on-primary-fixed": "#2c0051",
+                "surface-dim": "#0b1326",
+                "error": "#ffb4ab",
+                "on-surface": "#dae2fd",
+                "surface-tint": "#ddb7ff",
+                "surface-variant": "#2d3449",
+                "on-error": "#690005",
+                "primary-container": "#b76dff",
+                "tertiary-fixed": "#ffd8e7",
+                "inverse-surface": "#dae2fd",
+                "on-primary-container": "#400071",
+                "inverse-primary": "#842bd2",
+                "primary": "#ddb7ff",
+                "secondary-fixed-dim": "#2fd9f4",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-container": "#560038",
+                "outline-variant": "#4d4354",
+                "tertiary-fixed-dim": "#ffafd3",
+                "primary-fixed-dim": "#ddb7ff",
+                "on-secondary-container": "#00515d",
+                "tertiary": "#ffafd3",
+                "surface-container": "#171f33",
+                "on-primary-fixed-variant": "#6900b3",
+                "on-surface-variant": "#cfc2d6",
+                "on-background": "#dae2fd",
+                "tertiary-container": "#e364a7",
+                "on-secondary-fixed": "#001f25",
+                "surface-bright": "#31394d",
+                "inverse-on-surface": "#283044",
+                "surface-container-high": "#222a3d",
+                "secondary": "#5de6ff",
+                "on-primary": "#490080",
+                "surface-container-low": "#131b2e",
+                "surface-container-highest": "#2d3449",
+                "surface-container-lowest": "#060e20",
+                "on-tertiary-fixed-variant": "#85145a",
+                "error-container": "#93000a",
+                "secondary-fixed": "#a2eeff",
+                "secondary-container": "#00cbe6",
+                "primary-fixed": "#f0dbff",
+                "on-tertiary-fixed": "#3d0026",
+                "on-secondary": "#00363e",
+                "on-secondary-fixed-variant": "#004e5a",
+                "outline": "#988d9f"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "container-padding": "24px",
+                "unit": "8px",
+                "toolbar-gap": "12px",
+                "canvas-margin": "32px",
+                "gutter": "16px"
+            },
+            "fontFamily": {
+                "display-lg-mobile": ["Sora"],
+                "body-md": ["Inter"],
+                "display-lg": ["Sora"],
+                "body-lg": ["Inter"],
+                "player-tag": ["Sora"],
+                "headline-md": ["Sora"],
+                "label-caps": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "player-tag": ["14px", {"lineHeight": "1", "fontWeight": "600"}],
+                "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-md border-b border-white/10 shadow-md flex items-center justify-between px-container-padding h-16 w-full max-w-none">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-primary/10 transition-colors p-2 rounded-full active:scale-95 duration-200" data-icon="grid_view">grid_view</button>
+<h1 class="font-display-lg-mobile text-display-lg-mobile tracking-tighter text-primary">PIXELPANIC</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-primary/10 transition-colors p-2 rounded-full active:scale-95 duration-200" data-icon="settings">settings</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-container-padding max-w-7xl mx-auto">
+<!-- Winner Podium Section -->
+<section class="mb-16 relative">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-20 overflow-hidden">
+
+</div>
+<div class="flex flex-col items-center justify-end h-[500px] md:h-[600px] gap-0">
+<div class="flex items-end justify-center w-full gap-4 md:gap-8 max-w-4xl">
+<!-- 2nd Place -->
+<div class="flex flex-col items-center flex-1 animate-float" style="animation-delay: 0.5s;">
+<div class="relative mb-4">
+<div class="w-20 h-20 md:w-24 md:h-24 rounded-full border-[3px] border-secondary overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="A portrait of a competitive gamer wearing sleek digital glasses, neon cyan lighting illuminating their face, digital art style with high-energy purple and blue gradients in the background, sharp focus and futuristic aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnRHoRrRZY3dKZCGJr0rfx4mPERYEHxgm9pOHGpZX4BLfye0gtRve65mKO4imiXvT_rwDiTYMhT5Z6p0pAjn7UrgPeAbf02upPPAYYL8OYg4pxblkUfMAP8AFRg0Pt5n4g7fGpo1qP8Lm20-DxA1nRp0HKKlFpCJ94rkQDIPti7ehCY6z6TR3D4l9F5uQBVDvisJwyOwm8HAuEr6IGm7ZGA8RB-Wq91rlaGQdCwFX5O80fA-Ur-tEExP0iZosRgjHH6s-ZW2VCIpoo"/>
+</div>
+<div class="absolute -top-2 -right-2 bg-secondary text-on-secondary px-2 py-1 rounded-full font-label-caps text-label-caps">2nd</div>
+</div>
+<h3 class="font-player-tag text-player-tag mb-1">PixelWizard</h3>
+<span class="font-label-caps text-label-caps text-secondary mb-4">2,450 PTS</span>
+<div class="w-full h-32 md:h-48 podium-gradient-2 rounded-t-2xl glass-panel border-b-0 flex items-center justify-center">
+<span class="text-on-secondary font-display-lg text-4xl opacity-50">II</span>
+</div>
+</div>
+<!-- 1st Place -->
+<div class="flex flex-col items-center flex-1 animate-float">
+<div class="relative mb-6">
+<div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-[4px] border-primary overflow-hidden bg-surface-container-high shadow-[0_0_30px_rgba(221,183,255,0.4)]">
+<img class="w-full h-full object-cover" data-alt="A triumphant pro-gamer character with a confident smile, surrounded by holographic game interface elements, vibrant electric purple and deep indigo color scheme, sophisticated glassmorphism effect, premium digital illustration style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw5BA7NWvbMNVFqlVmlRRJoneJoavcHOGTBfIvN6HlL1wImjpJAjeZ08NCSg3wSTaCL6llIjp96IXBXfIpTnr4Lpf-8wsc9xsEMxCO9rRWkpE4UInIT-i10OgrBYeykrWyhZMZDpUuAjS6vGRAUgG9xjMCbJyYUFo5uqstMpJSgvhVwddDfGIJo8it2mK9CuMRGv8QaYHM7RIbPKqAvP2_KAJ1CtPMOXAVp5dzhMFhbvJvsU0vdcqhoM2JslyZSF01BirmVIbYpnfh"/>
+</div>
+<div class="absolute -top-3 -right-3 bg-primary text-on-primary px-3 py-1.5 rounded-full font-label-caps text-[14px] shadow-lg shimmer">WINNER</div>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 material-symbols-outlined text-primary scale-150" style="font-variation-settings: 'FILL' 1;">workspace_premium</div>
+</div>
+<h3 class="font-display-lg-mobile text-2xl mb-1">PlayerOne</h3>
+<span class="font-label-caps text-[16px] text-primary mb-6">3,120 PTS</span>
+<div class="w-full h-48 md:h-72 podium-gradient-1 rounded-t-2xl glass-panel border-b-0 flex items-center justify-center relative overflow-hidden">
+<span class="text-on-primary font-display-lg text-6xl opacity-50">I</span>
+<div class="absolute inset-0 shimmer"></div>
+</div>
+</div>
+<!-- 3rd Place -->
+<div class="flex flex-col items-center flex-1 animate-float" style="animation-delay: 1s;">
+<div class="relative mb-4">
+<div class="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] border-tertiary overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="An artistic digital avatar of a young woman with pink highlighted hair, neon aesthetic, urban tech-wear clothing, vibrant hot pink and charcoal gray lighting, sharp digital art style with soft glowing accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUf5T1j1YgE-Lj7Vt3TCbHoxqNWffL4jkIc--IaliZ7MbU66tWtPwjLcwIcMErQjnSmGqkVBbV9ae31sZAFm3fCJ53fL2uzxG96Rj5xdH4y02MbLatArKOVbN6PibqWsYhr9btzLGmTpxybD8S-8EdCVEGqxAl67g6Jz_JU9jlJTVkobwuIAzM-fNrOcobP5Lj7dN5_PLD3EhQPEZX48JZYk-Bgia1FBJdho97zuf2zYZyirP5mrkF3x8absgOyRRjE4c-BpnoKXKb"/>
+</div>
+<div class="absolute -top-2 -right-2 bg-tertiary text-on-tertiary px-2 py-1 rounded-full font-label-caps text-label-caps">3rd</div>
+</div>
+<h3 class="font-player-tag text-player-tag mb-1">DrawBot9k</h3>
+<span class="font-label-caps text-label-caps text-tertiary mb-4">1,980 PTS</span>
+<div class="w-full h-24 md:h-32 podium-gradient-3 rounded-t-2xl glass-panel border-b-0 flex items-center justify-center">
+<span class="text-on-tertiary font-display-lg text-3xl opacity-50">III</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+<div class="glass-panel p-6 rounded-xl flex items-center gap-6 group hover:border-primary/50 transition-all">
+<div class="w-16 h-16 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl">brush</span>
+</div>
+<div>
+<p class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-widest">Best Drawing</p>
+<h4 class="font-headline-md text-headline-md text-primary">"The Cyber Cat"</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">by PlayerOne</p>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl flex items-center gap-6 group hover:border-secondary/50 transition-all">
+<div class="w-16 h-16 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl">timer</span>
+</div>
+<div>
+<p class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-widest">Fastest Guess</p>
+<h4 class="font-headline-md text-headline-md text-secondary">0.8 Seconds</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">by PixelWizard</p>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl flex items-center gap-6 group hover:border-tertiary/50 transition-all">
+<div class="w-16 h-16 rounded-lg bg-tertiary-container/20 flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl">done_all</span>
+</div>
+<div>
+<p class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-widest">Total Correct</p>
+<h4 class="font-headline-md text-headline-md text-tertiary">42 Guesses</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Group Record!</p>
+</div>
+</div>
+</div>
+<!-- Full Rankings Table -->
+<div class="glass-panel rounded-2xl overflow-hidden mb-12">
+<div class="p-6 border-b border-white/5 flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md">Session Rankings</h2>
+<div class="bg-surface-container-highest px-4 py-2 rounded-lg font-label-caps text-label-caps text-on-surface-variant">
+                    8 PLAYERS TOTAL
+                </div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-caps text-label-caps">
+<tr>
+<th class="px-8 py-4">RANK</th>
+<th class="px-8 py-4">PLAYER</th>
+<th class="px-8 py-4">THIS GAME</th>
+<th class="px-8 py-4">TOTAL XP</th>
+<th class="px-8 py-4 text-right">PROGRESS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5">
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-8 py-4 font-label-caps text-primary">#1</td>
+<td class="px-8 py-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Avatar of a top ranked digital artist, glowing purple eyes, tech accessories, cyberpunk background, neon color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB4ygY6OEkOVjEEhllGQSm5hTMsuI4j-vr_eCmo_N7oVHjla4Onoa2TTPBsdD7B56Gs1DdQePYyU07SsPo0O2Xcjj0KkEKzDWhwrEMkXXxhZ9HSlqhmndtgKxn5Gbne_cv2g8NdLxAa9SEFtT-kPG2GhSom9aoPq0rJUnB56MG9hgG_NsEelrj0dyTyr-j2gLLjc_6bHSjoMnZlDle3kpvA8UKVKcZnGqNJduYTRRG_Szcsi2dngIz32KGgEXE91rVVaBybtzqniDl"/>
+</div>
+<span class="font-player-tag">PlayerOne</span>
+</td>
+<td class="px-8 py-4 font-label-caps text-primary">+3,120</td>
+<td class="px-8 py-4 font-label-caps">42,500 XP</td>
+<td class="px-8 py-4 text-right">
+<div class="w-32 bg-surface-container h-2 rounded-full inline-block overflow-hidden">
+<div class="bg-primary h-full w-[85%]"></div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-4 font-label-caps text-secondary">#2</td>
+<td class="px-8 py-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-secondary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Profile image of a cyan-themed gaming character, sleek interface overlays, futuristic helmet, vibrant blue lighting, sharp digital rendering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP5uFfhqU_vUIlViHeeVivLbQsDVxqBocB6SYjSXMB07o_NkUzI6nUPXl3A9DgA1QRaPrMphSL_niT-7KCbAYIe04zG2wcRxxm3UggV8xSAAdbDwOqHlZPDTZW3UJ02PSzzMP41lcYL4wfge8gZ1PH9NPFQZpnXujkgJA8Tb5IpfDWEMP3U_C7Zi6ohG9NG8FFIzpiCYCk8olMh007MT7xAuREbB60ajbEYsKyq-mXVvP37IxFSMY2DyOYW7vfPXsXZ-wjdWn2XLFi"/>
+</div>
+<span class="font-player-tag">PixelWizard</span>
+</td>
+<td class="px-8 py-4 font-label-caps text-secondary">+2,450</td>
+<td class="px-8 py-4 font-label-caps">38,120 XP</td>
+<td class="px-8 py-4 text-right">
+<div class="w-32 bg-surface-container h-2 rounded-full inline-block overflow-hidden">
+<div class="bg-secondary h-full w-[72%]"></div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-4 font-label-caps text-tertiary">#3</td>
+<td class="px-8 py-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-tertiary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a female game avatar with pink neon hair, urban streetwear style, dramatic pink and charcoal lighting, high contrast digital art." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4wNY-WJg8iX4utS2tpgty6dQiaOXiNyfH6uFjM0u6brzOHbJiJkFJ6OVt65EwSlqDEMfUvkLiJnutTElEvPCK8Z7h1oGoN6WJewhvEAl3rCbZpMfsAWVRH-ZC8FlYPjoRy2mZpbmyA09Ymrp4gCo9hbw6oUalaFlGCvKuyRqWbF2XBVhFgRd51alLnWsAZyxhW9nT8lvqdxd86l5T9bcUJpqCTEFxYWHzGR0IK-Ib5FY-Zvy4yZ1vlNEEpqjFJ-njFEwg0EkB7GQ_"/>
+</div>
+<span class="font-player-tag">DrawBot9k</span>
+</td>
+<td class="px-8 py-4 font-label-caps text-tertiary">+1,980</td>
+<td class="px-8 py-4 font-label-caps">15,400 XP</td>
+<td class="px-8 py-4 text-right">
+<div class="w-32 bg-surface-container h-2 rounded-full inline-block overflow-hidden">
+<div class="bg-tertiary h-full w-[45%]"></div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-4 font-label-caps text-on-surface-variant">#4</td>
+<td class="px-8 py-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Gaming avatar profile picture, dark mysterious figure with orange glowing eyes, tech-noir aesthetic, deep blue and orange palette, moody lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUWBlNJfenaNDmZoB9txTKZ2hlrRYGWhaumfVLuvj-CUXVU8AO5apYAQWN2wgi6vtMZOLO_McB7dnl8wVWBV_xsUSnZxXSiRVARS1vEpr11d0tpd5wBlU3MymzwFDL0ekhHeSIfLUk_uYq6qHBwkCzUzwPIxilgecLPAeVK6YQxUE7BxGf9aNDICAxgQE_-07XXuwFOSeLULiQH808JcFnukuUNS2p_dm-5EyHSpu0gT4A0UlsfjdVleH1InkfDspnwucSISPwVc_j"/>
+</div>
+<span class="font-player-tag">SketchMaster</span>
+</td>
+<td class="px-8 py-4 font-label-caps">+1,200</td>
+<td class="px-8 py-4 font-label-caps">12,800 XP</td>
+<td class="px-8 py-4 text-right">
+<div class="w-32 bg-surface-container h-2 rounded-full inline-block overflow-hidden">
+<div class="bg-outline h-full w-[38%]"></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Action Section -->
+<div class="flex flex-col md:flex-row items-center justify-center gap-6">
+<button class="w-full md:w-auto px-12 py-4 bg-primary text-on-primary rounded-xl font-headline-md shadow-[0_0_20px_rgba(221,183,255,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group">
+<span class="material-symbols-outlined">replay</span>
+                PLAY AGAIN
+            </button>
+<button class="w-full md:w-auto px-8 py-4 glass-panel text-on-surface rounded-xl font-headline-md hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-3">
+<span class="material-symbols-outlined">meeting_room</span>
+                BACK TO LOBBY
+            </button>
+<button class="w-full md:w-auto px-8 py-4 glass-panel text-on-surface rounded-xl font-headline-md hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-3">
+<span class="material-symbols-outlined">share</span>
+                SHARE RESULTS
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only Anchor) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.4)] flex justify-around items-center h-20 px-4 pb-safe w-full">
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="draw">draw</span>
+<span class="font-label-caps text-label-caps">Game</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span class="font-label-caps text-label-caps">Chat</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="image">image</span>
+<span class="font-label-caps text-label-caps">Gallery</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-caps text-label-caps">Profile</span>
+</div>
+</nav>
+<script>
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                // Subtle interaction logic if needed
+            });
+        });
+
+        // Simulating some dynamic entrance animations for podium items
+        window.addEventListener('DOMContentLoaded', () => {
+            const podiums = document.querySelectorAll('.animate-float');
+            podiums.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(50px)';
+                setTimeout(() => {
+                    el.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0px)';
+                }, 200 * index);
+            });
+        });
+    </script>
+</body></html>

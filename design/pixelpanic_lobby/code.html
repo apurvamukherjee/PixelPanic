@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PIXELPANIC - Lobby</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "background": "#0b1326",
+                    "surface": "#0b1326",
+                    "on-tertiary": "#620040",
+                    "on-primary-fixed": "#2c0051",
+                    "surface-dim": "#0b1326",
+                    "error": "#ffb4ab",
+                    "on-surface": "#dae2fd",
+                    "surface-tint": "#ddb7ff",
+                    "surface-variant": "#2d3449",
+                    "on-error": "#690005",
+                    "primary-container": "#b76dff",
+                    "tertiary-fixed": "#ffd8e7",
+                    "inverse-surface": "#dae2fd",
+                    "on-primary-container": "#400071",
+                    "inverse-primary": "#842bd2",
+                    "primary": "#ddb7ff",
+                    "secondary-fixed-dim": "#2fd9f4",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary-container": "#560038",
+                    "outline-variant": "#4d4354",
+                    "tertiary-fixed-dim": "#ffafd3",
+                    "primary-fixed-dim": "#ddb7ff",
+                    "on-secondary-container": "#00515d",
+                    "tertiary": "#ffafd3",
+                    "surface-container": "#171f33",
+                    "on-primary-fixed-variant": "#6900b3",
+                    "on-surface-variant": "#cfc2d6",
+                    "on-background": "#dae2fd",
+                    "tertiary-container": "#e364a7",
+                    "on-secondary-fixed": "#001f25",
+                    "surface-bright": "#31394d",
+                    "inverse-on-surface": "#283044",
+                    "surface-container-high": "#222a3d",
+                    "secondary": "#5de6ff",
+                    "on-primary": "#490080",
+                    "surface-container-low": "#131b2e",
+                    "surface-container-highest": "#2d3449",
+                    "surface-container-lowest": "#060e20",
+                    "on-tertiary-fixed-variant": "#85145a",
+                    "error-container": "#93000a",
+                    "secondary-fixed": "#a2eeff",
+                    "secondary-container": "#00cbe6",
+                    "primary-fixed": "#f0dbff",
+                    "on-tertiary-fixed": "#3d0026",
+                    "on-secondary": "#00363e",
+                    "on-secondary-fixed-variant": "#004e5a",
+                    "outline": "#988d9f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-padding": "24px",
+                    "unit": "8px",
+                    "toolbar-gap": "12px",
+                    "canvas-margin": "32px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": ["Sora"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Sora"],
+                    "body-lg": ["Inter"],
+                    "player-tag": ["Sora"],
+                    "headline-md": ["Sora"],
+                    "label-caps": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "player-tag": ["14px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      body {
+        background-color: #0b1326;
+        color: #dae2fd;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      .glass {
+        background: rgba(30, 41, 59, 0.4);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .glow-primary:hover {
+        box-shadow: 0 0 20px rgba(221, 183, 255, 0.4);
+      }
+      .glow-secondary:hover {
+        box-shadow: 0 0 20px rgba(93, 230, 255, 0.4);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #2d3449;
+        border-radius: 10px;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-md border-b border-white/10 shadow-md flex items-center justify-between px-container-padding h-16 w-full max-w-none">
+<div class="flex items-center gap-4">
+<button class="p-2 text-primary hover:bg-primary/10 transition-colors active:scale-95 duration-200 rounded-full">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<h1 class="font-display-lg-mobile text-display-lg-mobile tracking-tighter text-primary">PIXELPANIC</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 transition-colors active:scale-95 duration-200 rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Hero Section: Identity & Quick Actions -->
+<section class="md:col-span-8 flex flex-col gap-8">
+<div class="relative overflow-hidden rounded-3xl p-8 md:p-12 glass flex flex-col items-center text-center gap-6">
+<!-- Atmospheric Background Elements -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="absolute -bottom-20 -left-20 w-64 h-64 bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary uppercase leading-none">
+                    Doodle. Guess.<br/><span class="text-secondary">Dominate.</span>
+</h2>
+<p class="text-on-surface-variant max-w-lg text-body-lg">
+                    The fastest multiplayer drawing game on the web. Grab your brush and join thousands of players in real-time creative warfare.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+<button class="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-on-primary font-bold rounded-2xl shadow-lg glow-primary transition-all active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span class="text-body-lg font-bold">Play Now</span>
+</button>
+<button class="flex items-center justify-center gap-3 px-8 py-4 glass text-secondary font-bold rounded-2xl shadow-lg glow-secondary transition-all active:scale-95">
+<span class="material-symbols-outlined">key</span>
+<span class="text-body-lg font-bold">Create Private Room</span>
+</button>
+</div>
+</div>
+<!-- Active Public Rooms (Bento Style) -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">Active Lobbies</h3>
+<button class="text-primary font-label-caps flex items-center gap-1 hover:underline">
+                        REFRESH <span class="material-symbols-outlined text-sm">refresh</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Room Card 1 -->
+<div class="glass p-4 rounded-2xl flex flex-col gap-4 group cursor-pointer hover:border-primary/30 transition-all">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="font-player-tag text-on-surface">Neon Knights</span>
+<span class="text-xs text-on-surface-variant">Classic Drawing • 6 Rounds</span>
+</div>
+<span class="bg-secondary/10 text-secondary px-2 py-1 rounded text-[10px] font-bold border border-secondary/20">7/12 PLAYERS</span>
+</div>
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Close up profile picture of a stylized cyberpunk gamer avatar with purple glowing accents and neon hair." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANkjDmVOgKTGx0eAF_GM2JCF2fWORfmix0sSG75V6KE7qT-FsFJ9mci6zK8ZL2rH9z9-pxOiQxz4iwCAHWrdQ6hclKzAA7gRoNYJlaMWuzyrcW9lV_R67FxRlVyUv_OKww45z72dJuvj816qjbOLmx3E8oHl4TgTAIx5Fl1Y4hL9MB9ndWYCT5M5HII9-EdrUOyIfA04MHUi5-Vh8hTOPP8n760p9TOjCuZTE31sqb06efbxJTOh67OJzDHHtuFOLGl7BHmTlQq4d9"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Close up profile picture of a digital illustration of a cat wearing high-tech VR goggles with teal reflections." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7rMMrcEBX6m79RV_K_MwMUPYNXfI0IYFDD5Rh08yBQkEFLeyqt2InK8mgTLThre9cN0G7KBmgBHLTQlbUejodNLi4OpDYfrX4qjT64RuXsNJOctFqrqUbi93tr2KQ89AqblbzZ3jVWmEuwFocYHH5KvHrNKAeWzeX3pQFgoM7y4LeBAHbJXa-b1xGBVjc0EQggEmEnYXM30fIJXVvqitPbNN7VbQMeLvCEjY3g2YfwBGkGSNfzy2GJg0vTVJTgNMDyFwJ2WBeNWJA"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Close up profile picture of a minimalist robot head with a single glowing cyan eye on a dark textured metal background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7PrTn8n1eqOpDcmeyFL-6dH6FojxI5NZ7y3ekcJF6zfloFqD0EZaV1HaLkO6kj7RkTpiUoBOynYCXa6vtssljKN3ok6dJxC9YSjnPg8H3WKXEEWv4CuBDDj2T1Ev1C3Fq18mPN5xb0--rKDv-tw83PCaRAf4UXMhFNUh4-LYA9jZBr2ClcIlsBBAC5Kpo-hv0VBFr-djsnbVMOSLTrd1WeFujVG4CtcniCQiZpsxjhAiDw799-3ZakKJRxO_C_HV_IHxrwlC3fN6B"/>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-surface-variant flex items-center justify-center text-[10px] font-bold">+4</div>
+</div>
+</div>
+<!-- Room Card 2 -->
+<div class="glass p-4 rounded-2xl flex flex-col gap-4 group cursor-pointer hover:border-primary/30 transition-all">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="font-player-tag text-on-surface">Speed Paint #09</span>
+<span class="text-xs text-on-surface-variant">Rapid Fire • 10 Rounds</span>
+</div>
+<span class="bg-primary/10 text-primary px-2 py-1 rounded text-[10px] font-bold border border-primary/20">11/12 PLAYERS</span>
+</div>
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Close up profile picture of an anime style character with spiky silver hair and glowing electric blue eyes on a dark cosmic background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnvQW3fDxnfmzQ-HdU6qIl4Y9ZsA438y7HCEpDlhJvFDA0YbHeEknvVuV_o3Wl5sxouE_F3Cvw2rcackq1w1u3wnPy7pmL0BFO1WrNaI1xtPDsmjTiGZVvWElXThubFXlSKjwKWGwXNGOyR0511tKbKi-3F7HBzrWZDm5_9a6LAaWVBQJNZekeTzOLByKWf84wXuIBtu_LbAdg_46CgJcJM-pKYDH7joafYSKeyV1gJk4nE73JsnuKyw4occ6qeG6ggizPJzWQ0mXJ"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Close up profile picture of a digital painting of a golden retriever wearing a crown and pixel art glasses." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV9uVF1zMGAQSaSuauC_pnEsF8dA_pMfsoPn3P4-9K4q93Und7o_De9lRyIhZnA5oLZQ1SM-VgoIsE_TzXPxi_LybMeffthBSfzPy2qrhYGVXUGoeGAXN5DOl4kvzYi35Hn6iZzkN9Z1mXOoIijGNGQKGnnyUm-GXgMtvp26eBWCf8GXFW7NdzG0bXOR9jYVlhwz7xe5YR4WUcH-_CXTS-7-CpYFjJRwBhaHbhGWmYTtxQZcCz6uHRBLAQkHHzMaUXfamORqlx3nEO"/>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-surface-variant flex items-center justify-center text-[10px] font-bold">+9</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar: Profile & Social -->
+<aside class="md:col-span-4 flex flex-col gap-6">
+<!-- Player Profile Snippet -->
+<div class="glass p-6 rounded-3xl flex flex-col items-center gap-4 relative overflow-hidden">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+
+</div>
+<div class="relative">
+<div class="w-24 h-24 rounded-full border-4 border-primary p-1 bg-surface-container-high">
+<img class="w-full h-full rounded-full object-cover" data-alt="High-end digital avatar of a mysterious hooded figure with glowing violet circuitry lines across their face, set against a dark obsidian background with subtle dust particles." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDk_Tnw1HBkq4NMt2vLngemeKOQwdbBOskwql3BJmQb4MgOxUgSbhfE18t_zYWGZeEXr95A5BmZQHiI3-K0Jr6VrZMRSvlDC22pbWJpyLrlTHHJouJlsDcl1fa2V-nUTWix35rUOcTVkQ_WSZwj4V-pOh6TppwbLuJ3K8duv99CgI0SIPBhnPxdSFAhQCCfkqGQgQX4lwNBD4mHcA27Mo-er8__hak_FKzcOOj6cfLelbP-83PlRLMxG4xqqZWM3hfyHmV6APeI4-Y6"/>
+</div>
+<div class="absolute bottom-0 right-0 bg-primary text-on-primary font-label-caps text-[10px] px-2 py-1 rounded-full border-2 border-surface">LVL 42</div>
+</div>
+<div class="text-center z-10">
+<h4 class="font-headline-md text-headline-md text-on-surface">Player One</h4>
+<p class="text-on-surface-variant font-label-caps text-[10px]">Master Tier • #XP8291</p>
+</div>
+<div class="w-full space-y-2 z-10">
+<div class="flex justify-between text-[11px] font-label-caps">
+<span>XP Progress</span>
+<span class="text-primary">850 / 1200</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[70%] rounded-full shadow-[0_0_10px_rgba(221,183,255,0.6)]"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 w-full z-10">
+<div class="bg-surface-container-low p-3 rounded-xl border border-white/5 text-center">
+<div class="text-secondary font-bold text-lg">152</div>
+<div class="text-[9px] font-label-caps text-on-surface-variant">WINS</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl border border-white/5 text-center">
+<div class="text-tertiary font-bold text-lg">14.2k</div>
+<div class="text-[9px] font-label-caps text-on-surface-variant">LIFETIME XP</div>
+</div>
+</div>
+</div>
+<!-- Global Activity -->
+<div class="glass rounded-3xl p-6 flex flex-col gap-4">
+<h3 class="font-label-caps text-on-surface-variant border-b border-white/5 pb-2">Global Feed</h3>
+<div class="flex flex-col gap-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+<div class="flex gap-3 items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-white/10 flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary scale-75">emoji_events</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-tight">
+<span class="text-secondary font-bold">ZenDraw</span> just won the Daily Challenge!
+                        </p>
+</div>
+<div class="flex gap-3 items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-white/10 flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary scale-75">person_add</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-tight">
+<span class="text-primary font-bold">ArtLover99</span> is now online.
+                        </p>
+</div>
+<div class="flex gap-3 items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-white/10 flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary scale-75">campaign</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-tight">
+<span class="text-tertiary font-bold">System:</span> New drawing tools added to Store!
+                        </p>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- BottomNavBar (Mobile Only View) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.4)] flex justify-around items-center h-20 px-4 pb-safe w-full">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">draw</span>
+<span class="font-label-caps text-label-caps">Game</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-label-caps text-label-caps">Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">image</span>
+<span class="font-label-caps text-label-caps">Gallery</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-caps text-label-caps">Profile</span>
+</a>
+</nav>
+<!-- Desktop Sidebar Overlay (Triggered by Top Bar Grid) -->
+<div class="fixed left-0 top-0 h-full w-72 z-40 bg-surface-container-high border-r border-white/5 shadow-2xl transition-all duration-300 ease-in-out -translate-x-full" id="drawer">
+<div class="flex flex-col p-4 gap-2 h-full">
+<div class="mb-8 pt-16 px-4">
+<h1 class="font-display-lg text-display-lg text-primary leading-none">PIXEL<br/>PANIC</h1>
+</div>
+<div class="flex items-center gap-3 p-4 mb-4 glass rounded-xl">
+<img class="w-10 h-10 rounded-full" data-alt="Minimalist gamer avatar icon, stylized close-up with neon green highlights on dark metal gear background, high definition digital art." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfmlVKFDNAnpRfH9zD-UgUOdYmxvwNkwxI5w-GUBY8kinqbTLsCeee-v1veqCaXo6LW3u0Ux1opLcjMvq5rAttcboOX_ckk6siNAXotJ-XPnxpWM85gNXwCBjSPKmvh8oOW85DiYPzpV4TXQsQmp1YCxjKhMlLNG9244Ho4Zw16ckIPipUfVeh-QvNMnbNNQ9cSVA8uoDk68ukIGRyuEaAkBpIfDd7Fv_AFM54wxfhNxlHqwJjkVKxnOesQLkYoQ8Ln_pQ4nHmNK6J"/>
+<div class="flex flex-col overflow-hidden">
+<span class="font-body-md text-on-surface font-bold truncate">Player One</span>
+<span class="text-[10px] text-on-surface-variant">Master Tier</span>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-body-md">Players</span>
+</a>
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-body-md">Chat</span>
+</a>
+<a class="flex items-center gap-4 p-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">local_mall</span>
+<span class="font-body-md">Store</span>
+</a>
+<a class="flex items-center gap-4 p-3 bg-secondary-container text-on-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fitbit_check_small</span>
+<span class="font-body-md">Profile</span>
+</a>
+</nav>
+</div>
+</div>
+<script>
+        const drawer = document.getElementById('drawer');
+        const menuBtn = document.querySelector('header button:first-child');
+        let drawerOpen = false;
+
+        menuBtn.addEventListener('click', () => {
+            drawerOpen = !drawerOpen;
+            if (drawerOpen) {
+                drawer.style.transform = 'translateX(0)';
+            } else {
+                drawer.style.transform = 'translateX(-100%)';
+            }
+        });
+
+        // Close drawer when clicking outside
+        document.addEventListener('click', (e) => {
+            if (drawerOpen && !drawer.contains(e.target) && !menuBtn.contains(e.target)) {
+                drawerOpen = false;
+                drawer.style.transform = 'translateX(-100%)';
+            }
+        });
+    </script>
+</body></html>

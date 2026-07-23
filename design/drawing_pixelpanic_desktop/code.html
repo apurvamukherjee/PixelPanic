@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PIXELPANIC - Drawing Phase</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@700&amp;family=Sora:wght@400;600;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#171f33",
+                        "outline": "#988d9f",
+                        "surface-variant": "#2d3449",
+                        "surface-bright": "#31394d",
+                        "on-surface-variant": "#cfc2d6",
+                        "outline-variant": "#4d4354",
+                        "on-tertiary-fixed-variant": "#85145a",
+                        "inverse-primary": "#842bd2",
+                        "on-secondary-container": "#00515d",
+                        "surface-container-low": "#131b2e",
+                        "inverse-on-surface": "#283044",
+                        "on-tertiary-fixed": "#3d0026",
+                        "on-tertiary": "#620040",
+                        "tertiary-fixed": "#ffd8e7",
+                        "surface-container-lowest": "#060e20",
+                        "secondary-fixed": "#a2eeff",
+                        "primary-fixed": "#f0dbff",
+                        "on-tertiary-container": "#560038",
+                        "on-surface": "#dae2fd",
+                        "on-primary-container": "#400071",
+                        "surface-container-high": "#222a3d",
+                        "on-secondary-fixed-variant": "#004e5a",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#6900b3",
+                        "primary-fixed-dim": "#ddb7ff",
+                        "on-primary": "#490080",
+                        "on-primary-fixed": "#2c0051",
+                        "tertiary-container": "#e364a7",
+                        "surface-container-highest": "#2d3449",
+                        "on-background": "#dae2fd",
+                        "on-secondary-fixed": "#001f25",
+                        "error": "#ffb4ab",
+                        "secondary-container": "#00cbe6",
+                        "secondary": "#5de6ff",
+                        "secondary-fixed-dim": "#2fd9f4",
+                        "tertiary-fixed-dim": "#ffafd3",
+                        "on-secondary": "#00363e",
+                        "error-container": "#93000a",
+                        "background": "#0b1326",
+                        "on-error": "#690005",
+                        "tertiary": "#ffafd3",
+                        "surface-dim": "#0b1326",
+                        "primary-container": "#b76dff",
+                        "primary": "#ddb7ff",
+                        "surface-tint": "#ddb7ff",
+                        "inverse-surface": "#dae2fd",
+                        "surface": "#0b1326"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "gutter": "16px",
+                        "canvas-margin": "32px",
+                        "toolbar-gap": "12px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg-mobile": ["Sora"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "player-tag": ["Sora"],
+                        "headline-md": ["Sora"],
+                        "display-lg": ["Sora"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "player-tag": ["14px", {"lineHeight": "1", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            overflow: hidden;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .canvas-shadow {
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(221, 183, 255, 0.05);
+        }
+        .timer-pulse {
+            animation: pulse-red 1s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; color: #ffafd3; }
+            50% { opacity: 0.7; color: #ffb4ab; }
+        }
+        .neon-text {
+            text-shadow: 0 0 10px rgba(183, 109, 255, 0.8), 0 0 20px rgba(183, 109, 255, 0.4);
+        }
+        .active-tool {
+            background: #2d3449;
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.4), 0 0 10px rgba(0, 203, 230, 0.3);
+            border-color: #00cbe6;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-md border-b border-outline-variant/30 shadow-md flex justify-between items-center px-gutter py-unit h-16">
+<div class="flex items-center gap-6">
+<span class="font-display-lg text-display-lg-mobile tracking-tighter text-primary italic uppercase neon-text">PIXELPANIC</span>
+<div class="hidden md:flex items-center gap-4 ml-8">
+<span class="text-secondary font-bold border-b-2 border-secondary pb-1 font-headline-md text-headline-md">Lobby</span>
+<span class="text-on-surface-variant font-medium hover:text-secondary-container transition-colors duration-200 cursor-pointer">Gallery</span>
+<span class="text-on-surface-variant font-medium hover:text-secondary-container transition-colors duration-200 cursor-pointer">Store</span>
+</div>
+</div>
+<!-- Timer Center -->
+<div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-6 py-1 bg-surface-container-highest rounded-full border border-outline-variant/50">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">timer</span>
+<span class="font-label-caps text-headline-md tracking-widest" id="game-timer">00:42</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:text-secondary transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-secondary transition-colors active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full border-2 border-secondary overflow-hidden bg-surface-variant">
+<img class="w-full h-full object-cover" data-alt="A professional gamer profile avatar with a sleek, futuristic aesthetic. The character wears high-tech LED-lit headphones with cyan highlights. The background is a dark, atmospheric purple and blue nebula-style gradient. High-key lighting accents the sharp contours of the character's face, conveying a sense of focus and competitive energy in a premium gaming environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTjVTT6nqR6NGIwCtRLoXq3K736ERtkKGWat4Fr7_MqFisWtAs_AlLdKjTgLdUf9s_-tSVtkVIllEVo7fD7r49Yk-pQCe7aFv7wndbYTibuPHn36mUyo8pDO75LIUPG6f-uV_a6NVaSf6A74ESp2On8fjDD16IVj-KevnK8U0Uz_4nRBFnyTrJlFzHkBdTCL6HjYfoyqevnGT2kqZF61SR-gokTkRcwvVP_mW4Xp75eFt4sr4NLSDvHHxmvUE43SV_FKHFmAZ4yo8C"/>
+</div>
+</div>
+</header>
+<main class="flex-1 mt-16 flex overflow-hidden">
+<!-- Left Sidebar: Tools -->
+<aside class="w-20 bg-surface-container-low border-r border-outline-variant/20 flex flex-col items-center py-6 gap-6 z-10">
+<div class="flex flex-col gap-4">
+<button class="w-12 h-12 flex items-center justify-center rounded-xl glass-panel active-tool text-secondary border border-transparent transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">brush</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl glass-panel text-on-surface-variant hover:bg-surface-bright/50 border border-transparent transition-all">
+<span class="material-symbols-outlined">ink_eraser</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl glass-panel text-on-surface-variant hover:bg-surface-bright/50 border border-transparent transition-all">
+<span class="material-symbols-outlined">format_paint</span>
+</button>
+</div>
+<div class="w-10 h-[1px] bg-outline-variant/30"></div>
+<div class="flex flex-col gap-3">
+<div class="w-8 h-8 rounded-full bg-primary ring-2 ring-white/20 cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-secondary ring-2 ring-white/20 cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-tertiary ring-2 ring-white/20 cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-error ring-2 ring-white/20 cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-white ring-2 ring-white/20 cursor-pointer"></div>
+<button class="w-8 h-8 rounded-full border border-dashed border-outline flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-xs">add</span>
+</button>
+</div>
+<div class="mt-auto flex flex-col gap-4">
+<button class="w-12 h-12 flex items-center justify-center rounded-xl glass-panel text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl glass-panel text-on-surface-variant hover:text-secondary transition-all">
+<span class="material-symbols-outlined">undo</span>
+</button>
+</div>
+</aside>
+<!-- Central Hero: Canvas -->
+<section class="flex-1 relative flex flex-col items-center justify-center p-8 bg-surface-container-lowest">
+<!-- Background Decoration -->
+
+<!-- Prompt Label -->
+<div class="mb-8 text-center">
+<p class="font-label-caps text-on-surface-variant text-sm tracking-widest mb-2 uppercase">DRAW THIS</p>
+<h1 class="font-display-lg text-display-lg text-primary uppercase italic tracking-tighter neon-text">ASTRONAUT</h1>
+</div>
+<!-- Drawing Area -->
+<div class="relative w-full max-w-4xl aspect-[4/3] bg-white rounded-2xl canvas-shadow overflow-hidden group">
+<canvas class="w-full h-full cursor-crosshair" id="drawingCanvas"></canvas>
+<!-- Floating Toolbar Info -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 glass-panel px-6 py-3 rounded-full flex items-center gap-8 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="flex items-center gap-3">
+<span class="text-xs font-label-caps text-on-surface-variant">SIZE</span>
+<div class="w-32 h-2 bg-surface-variant rounded-full relative">
+<div class="absolute inset-y-0 left-0 w-1/3 bg-secondary rounded-full"></div>
+<div class="absolute top-1/2 -translate-y-1/2 left-1/3 w-4 h-4 bg-white rounded-full shadow-lg border-2 border-secondary"></div>
+</div>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-3">
+<span class="text-xs font-label-caps text-on-surface-variant">OPACITY</span>
+<span class="font-label-caps text-secondary">100%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Sidebar: Player List & Scores -->
+<aside class="w-80 bg-surface-container-low border-l border-outline-variant/20 flex flex-col p-gutter z-10">
+<h2 class="font-headline-md text-headline-md mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">group</span>
+                PLAYERS
+            </h2>
+<div class="flex-1 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
+<!-- Player Item (Drawing) -->
+<div class="flex items-center gap-4 p-3 rounded-xl bg-primary-container/20 border border-primary/30 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent"></div>
+<div class="relative w-12 h-12 shrink-0 rounded-full border-[3px] border-primary p-0.5">
+<img class="w-full h-full rounded-full object-cover" data-alt="A stylized 3D avatar of a pro-gamer character with neon purple hair and sleek digital goggles. The lighting is intense with a violet and magenta color scheme, reflecting off the metallic surfaces of their futuristic tech-wear. The expression is confident and focused. Cinematic depth of field with a dark, high-energy gaming studio background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-buAUsZVM6By5csNbrC6hdfsXglKr8MR2Fm_vlqBIDmCiK-74n70hD-jVUAHMTMXBppksjlZnzd76w4dL9algdEKtom0UG3ixtKhJVhiIPVtdkx0D-c7R4qNAnGfi2ZyiGjCBxunJefWfmDgXyMzk0ENyNM533SC7ZmGRObGOBjlE-sWzsLTUZGdpY6fT7QB2V2FPFfOqvJ_OP8mJkq2A3w7qPveSo2s53LUctVpYXj2pXDo5D7-ivWpXav4Q8g3rdxHG489NwHMR"/>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary text-[10px] font-label-caps px-1.5 py-0.5 rounded-full">PEN</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-player-tag text-player-tag truncate text-primary">Player One</p>
+<p class="text-xs text-on-surface-variant">Drawing...</p>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-headline-md text-primary">1,240</p>
+</div>
+</div>
+<!-- Player Item (Active) -->
+<div class="flex items-center gap-4 p-3 rounded-xl glass-panel border border-transparent hover:border-secondary/30 transition-all cursor-default">
+<div class="w-12 h-12 shrink-0 rounded-full border-[3px] border-secondary p-0.5">
+<img class="w-full h-full rounded-full object-cover" data-alt="A cool digital avatar of a young female gamer with cyan-colored hair in space-buns, wearing a minimalist black tactical vest. Soft cyan ambient lighting glows from a high-tech wrist-device. The visual style is crisp and modern-electric, using high contrast between the deep slate-grey background and the electric blue highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoEJSB1j22jPq1Otn1zJ-3Rb8DK5AMyR1SMmXw_fXZ9OHARVkBjxUH-4rmvpy7xXccGG8WQ134bXKN-6FI9p-NldWSy8RGOATWQapQ4gTpmSN3ZvrKnWQ8q7FmDMwviNPnIxdP-m_yanHvPH_R7ZNUS1KHfsEIHTNpF_2lkKVFPjcSHn7U2AO7uG07B0llVpB3iVjmAeVUyZPs_RpWyg_1KhgSPD9CawKjrV8cFMwDUkOlvR_o-sVBAlTK1Wj-9Tk7VcCLF1fTZhut"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-player-tag text-player-tag truncate text-on-surface">ArtVandelay</p>
+<p class="text-xs text-on-surface-variant">Guessing</p>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-headline-md text-secondary">850</p>
+</div>
+</div>
+<!-- Player Item (Correct) -->
+<div class="flex items-center gap-4 p-3 rounded-xl bg-secondary-container/10 border border-secondary/20 group">
+<div class="w-12 h-12 shrink-0 rounded-full border-[3px] border-secondary p-0.5 grayscale opacity-70">
+<img class="w-full h-full rounded-full object-cover" data-alt="An edgy male gamer avatar with a neon-lit cybernetic eyepatch and short spiky silver hair. The character wears a dark oversized hoodie with glowing circuitry patterns. Background is a dark obsidian-grade chamber with subtle cyan light shafts. The aesthetic is futuristic and sharp, tailored for a pro-level gaming interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpMeYfUR0daf4yEow3HmIcI7bfCkbG1fuN3voK_PQvFJMlRjqfn_MOkb0i-zrd9FfWDSxYvIVglyCT7xipmvh9aFK7arZOvY1EyuxwontzKNIiK0QbKFbFhAPAA5iNorHI6Nz36Z_iZjdVASg0dHC7mTgNUXs6S71hF8Ki2XGgckNjHFa-KD6YHUXY6499yRQT0Wmtre1yTmfFazHKzvv8faVsNmRmW6dglC9kjrOHNFd4NV83TRsEzevKEKItQxjCtwnkIIKjQyfn"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1">
+<p class="font-player-tag text-player-tag truncate text-on-surface-variant">PixelPro</p>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<p class="text-xs text-secondary-container font-medium">Guessed correctly!</p>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-headline-md text-on-surface-variant">420</p>
+</div>
+</div>
+<!-- More players -->
+<div class="flex items-center gap-4 p-3 rounded-xl glass-panel opacity-60">
+<div class="w-12 h-12 shrink-0 rounded-full border-[3px] border-outline-variant p-0.5">
+<div class="w-full h-full rounded-full bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">person</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-player-tag text-player-tag truncate text-on-surface">NoobMaster69</p>
+<p class="text-xs text-on-surface-variant">Waiting</p>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-headline-md text-on-surface-variant">120</p>
+</div>
+</div>
+</div>
+<!-- Footer: Guess Input -->
+<div class="mt-6 pt-6 border-t border-outline-variant/30">
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl py-4 px-5 pr-12 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-secondary transition-all outline-none" placeholder="Type your guess..." type="text"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-secondary text-on-secondary flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-sm">send</span>
+</button>
+</div>
+</div>
+</aside>
+</main>
+<!-- Success Pop Notification (Mockup) -->
+<div class="fixed bottom-10 left-1/2 -translate-x-1/2 glass-panel border-secondary/50 px-8 py-4 rounded-2xl flex items-center gap-4 shadow-2xl translate-y-32 transition-transform duration-500 ease-out z-[60]" id="success-notif">
+<div class="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<div>
+<p class="font-player-tag text-secondary text-lg">Correct Guess!</p>
+<p class="text-sm text-on-surface-variant">You earned <span class="text-primary font-bold">+150 points</span></p>
+</div>
+</div>
+<script>
+        // Simple timer logic
+        let seconds = 42;
+        const timerEl = document.getElementById('game-timer');
+        
+        const updateTimer = () => {
+            if (seconds <= 0) return;
+            seconds--;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            if (seconds < 10) {
+                timerEl.parentElement.classList.add('timer-pulse', 'border-tertiary-container');
+            }
+        };
+        setInterval(updateTimer, 1000);
+
+        // Dummy drawing interaction
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#0F172A';
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+            ctx.beginPath();
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        });
+
+        // Trigger notification after a few seconds for demo
+        setTimeout(() => {
+            const notif = document.getElementById('success-notif');
+            notif.classList.remove('translate-y-32');
+            setTimeout(() => {
+                notif.classList.add('translate-y-32');
+            }, 4000);
+        }, 3000);
+    </script>
+</body></html>

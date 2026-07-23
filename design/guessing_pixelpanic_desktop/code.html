@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PIXELPANIC - Guessing Phase</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@700&amp;family=Sora:wght@600;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-border-cyan {
+            box-shadow: 0 0 15px rgba(0, 203, 230, 0.3);
+        }
+        .timer-pulse {
+            animation: pulse-red 1s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes pulse-red {
+            0%, 100% { color: #ffafd3; transform: scale(1); }
+            50% { color: #e364a7; transform: scale(1.1); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4d4354; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #988d9f; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container": "#171f33",
+                      "outline": "#988d9f",
+                      "surface-variant": "#2d3449",
+                      "surface-bright": "#31394d",
+                      "on-surface-variant": "#cfc2d6",
+                      "outline-variant": "#4d4354",
+                      "on-tertiary-fixed-variant": "#85145a",
+                      "inverse-primary": "#842bd2",
+                      "on-secondary-container": "#00515d",
+                      "surface-container-low": "#131b2e",
+                      "inverse-on-surface": "#283044",
+                      "on-tertiary-fixed": "#3d0026",
+                      "on-tertiary": "#620040",
+                      "tertiary-fixed": "#ffd8e7",
+                      "surface-container-lowest": "#060e20",
+                      "secondary-fixed": "#a2eeff",
+                      "primary-fixed": "#f0dbff",
+                      "on-tertiary-container": "#560038",
+                      "on-surface": "#dae2fd",
+                      "on-primary-container": "#400071",
+                      "surface-container-high": "#222a3d",
+                      "on-secondary-fixed-variant": "#004e5a",
+                      "on-error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#6900b3",
+                      "primary-fixed-dim": "#ddb7ff",
+                      "on-primary": "#490080",
+                      "on-primary-fixed": "#2c0051",
+                      "tertiary-container": "#e364a7",
+                      "surface-container-highest": "#2d3449",
+                      "on-background": "#dae2fd",
+                      "on-secondary-fixed": "#001f25",
+                      "error": "#ffb4ab",
+                      "secondary-container": "#00cbe6",
+                      "secondary": "#5de6ff",
+                      "secondary-fixed-dim": "#2fd9f4",
+                      "tertiary-fixed-dim": "#ffafd3",
+                      "on-secondary": "#00363e",
+                      "error-container": "#93000a",
+                      "background": "#0b1326",
+                      "on-error": "#690005",
+                      "tertiary": "#ffafd3",
+                      "surface-dim": "#0b1326",
+                      "primary-container": "#b76dff",
+                      "primary": "#ddb7ff",
+                      "surface-tint": "#ddb7ff",
+                      "inverse-surface": "#dae2fd",
+                      "surface": "#0b1326"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "8px",
+                      "gutter": "16px",
+                      "canvas-margin": "32px",
+                      "toolbar-gap": "12px",
+                      "container-padding": "24px"
+              },
+              "fontFamily": {
+                      "display-lg-mobile": ["Sora"],
+                      "label-caps": ["JetBrains Mono"],
+                      "body-lg": ["Inter"],
+                      "player-tag": ["Sora"],
+                      "headline-md": ["Sora"],
+                      "display-lg": ["Sora"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                      "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "player-tag": ["14px", {"lineHeight": "1", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                      "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-md text-primary font-headline-md text-headline-md border-b border-outline-variant/30 shadow-md flex justify-between items-center px-gutter py-unit h-16">
+<div class="flex items-center gap-4">
+<span class="font-display-lg text-display-lg-mobile tracking-tighter text-primary italic uppercase">PIXELPANIC</span>
+<div class="hidden md:flex gap-6 ml-8">
+<a class="text-secondary font-bold border-b-2 border-secondary pb-1" href="#">Lobby</a>
+<a class="text-on-surface-variant font-medium hover:text-secondary-container transition-colors duration-200" href="#">Gallery</a>
+<a class="text-on-surface-variant font-medium hover:text-secondary-container transition-colors duration-200" href="#">Store</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary-container transition-colors active:scale-95">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary-container transition-colors active:scale-95">settings</button>
+<div class="w-10 h-10 rounded-full border-2 border-secondary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A futuristic professional gamer avatar with glowing cybernetic features and neon purple highlights. The character wears a sleek black tactical headset and has a confident expression. The background is a blurred digital workspace with soft bokeh effects of deep blue and magenta." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg6i-wbGq_V7SQ0or4yFFJXXsYN3EjO9RYT4TZ1hH5EyqNG4MSSlGH-dnylQI_56pC4oFb7kGMfvMrQdRVPRoJj2ziUtif1THeYRjyT6sUUJaMrEL38xPFOzyIMBiD1SzaoUaJwaE0X0H6YeKPEfJC1dnyIRj-VAMB8x5E_V8jQQWrOIa9oE9DWoYlFOjHSuwq9St7_lIF_JWzHH2Tvv-XKKr48f2Uswx6t1awdkYOV55F84fYM8suCsThNJhLwX179gAZYyoIauWe"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 pt-16 h-full overflow-hidden">
+<!-- SideNavBar / Leaderboard -->
+<aside class="h-full w-64 bg-surface-container-low border-r border-outline-variant/20 shadow-xl flex flex-col py-4 hidden md:flex shrink-0">
+<div class="px-gutter mb-6">
+<div class="flex items-center gap-3 p-3 bg-surface-variant rounded-xl border border-outline-variant/30">
+<div class="w-12 h-12 rounded-full border-2 border-tertiary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a digital artist wearing modern dark streetwear with a hint of purple glowing light reflecting off their face. They are in a high-tech studio environment with floating holographic interfaces. The lighting is moody with high-saturation pink and blue accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDm8oELQL3qdWZc1O1rJPivELn14sWLbwzdRN5o6LsuDB4O9Ue9pn_6OK9eTaxMGpt8HBvFku_oq81XVw19MXjOeLE6pVVnoqZCa09NvHSgwebXT-8L1sifveOLJQFzIicbJGq718vNpNPML14GS25o3-IENxExZ2GbqXZyMKy1Vuguhd53V7sUXUjvNg_RPJBBo4w3irsB1an0ccLD4bM9RYspQuroP3Pfh0qDR6iW00TK8AWtNOC9GhsUYhATZXAsC5XCQJXVfQe"/>
+</div>
+<div>
+<p class="font-player-tag text-player-tag text-on-surface">Player One</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant uppercase">Level 42 Artist</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="px-gutter mb-2 flex items-center justify-between">
+<span class="font-label-caps text-[10px] text-outline uppercase tracking-widest">Leaderboard</span>
+<span class="font-label-caps text-[10px] text-secondary">ROUND 3/5</span>
+</div>
+<!-- Player List -->
+<div class="space-y-1 px-2">
+<!-- Drawing Player -->
+<div class="flex items-center gap-3 p-3 bg-primary-container/20 border border-primary/30 rounded-xl relative overflow-hidden group">
+<div class="w-8 h-8 rounded-full border-2 border-primary flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Digital profile icon of a gamer with a neon purple circular border signifying their active status. The character has stylized features and vibrant purple hair, looking focused. The background is a dark obsidian black with subtle geometric patterns." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqo-C0OU4GEDTLG5rcdZkN5I2jLRP3gxXlIE7RVYj1AaAhj5NJrkPEQSXh1oOQORz00Dh3QLJjtdAf_ZnjMg1YmWJAw5JL-HJ2wlUHOJMB58CfgdVvPxSgp1RaLieAz13L3ye24Cc2Ivz5iPjpXpAlhEpOC6_lN8-JWSSeLESlGqDI0Kdr4u-cZ6Xehah9ycPFhXYJefMx-FYA46WUUhSKYg_9PzDrMmf5NRQk_D8tuzVFUXmE3JCJbZsSH37hvgYunaYtWMVX-58x"/>
+</div>
+<div class="flex-1">
+<p class="font-player-tag text-player-tag text-primary">CyberSketch</p>
+<p class="text-[10px] font-label-caps text-primary/70">DRAWING...</p>
+</div>
+<span class="font-label-caps text-primary">1240</span>
+</div>
+<!-- Guessing Players -->
+<div class="flex items-center gap-3 p-3 hover:bg-surface-bright/50 rounded-xl transition-all group">
+<div class="w-8 h-8 rounded-full border-2 border-secondary flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Stylized avatar of a competitive gamer with cyan glowing accessories and a focused expression. The background is a clean, dark slate color with subtle tech-themed textures. The overall aesthetic is professional and high-energy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMAAHl15oB5Mjxaa_p3CRqUCrLxQQl4ZdhoKFGiP_PTEsf5aSD6kmZBb9ZnSChkLmJf0qgQQpHDIDG9uOp8UDTZWIe0bZXxItZsJZP5W6kL274C4CnKXmQTDeLtWUaqIvMNFPmPHoMXsy9SaP-GVK2yIMxlVSwFyn4s3-1nBvu7jYn9szVlHxchUFWxtJmchSBswdbumxbr58gISueDVI7hiTYfXyeN2XY4sZbSmWorhNu6mdokwlqBfJLB0mL_B0GJv03AeDRLKa_"/>
+</div>
+<div class="flex-1">
+<p class="font-player-tag text-player-tag text-on-surface">NeonKnight</p>
+<p class="text-[10px] font-label-caps text-secondary">ACTIVE</p>
+</div>
+<span class="font-label-caps text-on-surface-variant">980</span>
+</div>
+<div class="flex items-center gap-3 p-3 hover:bg-surface-bright/50 rounded-xl transition-all group">
+<div class="w-8 h-8 rounded-full border-2 border-outline-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Minimalist gamer avatar with a sleek gray aesthetic and muted lighting. The character is wearing a dark hoodie and has a calm demeanor. The background is a simple, dark obsidian color, reflecting a waiting or idle status." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4Szo8ouG-b0nIclZ6yoE-zFCp72_s8CzQcI0TrBsCxvxXX7aXmj5PfAmMwg5xCemSJH-ZVFMbixEjwghivQJC5z2W1SK2YZuuNMuDPBzdqHtaT2TiD8eelDJOrzFYDUnhbNLPlHRZh5s6Iyz5HR0kMk6lwLQJz0QRdi0CFKqE2vbDNHtFo1fmbwfZiMbEnAeWpWx1MoHe04xIriBX6L-DtrzqJGg067O58k8yPmznsOsv9hq4wXiKb20olmbRSRXWBI_CU39AoFo-"/>
+</div>
+<div class="flex-1">
+<p class="font-player-tag text-player-tag text-on-surface-variant">ShadowPixel</p>
+<p class="text-[10px] font-label-caps text-outline">WAITING</p>
+</div>
+<span class="font-label-caps text-outline">750</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-secondary-container/10 border border-secondary/20 rounded-xl">
+<div class="w-8 h-8 rounded-full border-2 border-secondary flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young digital gamer with vibrant cyan hair and futuristic glasses. They are laughing, creating a friendly and social mood. The background is a deep blue with soft lighting effects, fitting a high-octane social gaming environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBotcl_ZV5D4PCDofX_A0pE6x59ZwlC0_mnMfrk49XGzW11Syq61POmTtXUMQnJhQnUrE3rURJPX17kS8rpbmv0SRfEwGerOUjqPHzUcb2R_yc8idT6CTwkkxNwEo6HwRCbZ70epIfdgbGlIGiPxJ7dDkOn0nkIYio16ORE6jXxDuVsJt82Z0ybj9H4k73ZSrmZh_TcJJDjv76UU_ainuRKYMEREMVyhD80FM0B54ZMa9QBj4kRnHlYF-pqQnWIWwTHD7-Yksdq3LZo"/>
+</div>
+<div class="flex-1">
+<p class="font-player-tag text-player-tag text-secondary">You (P1)</p>
+<p class="text-[10px] font-label-caps text-secondary/70">GUESSING</p>
+</div>
+<span class="font-label-caps text-secondary">620</span>
+</div>
+</div>
+</nav>
+<div class="px-gutter mt-auto pt-4 border-t border-outline-variant/20">
+<button class="w-full py-3 bg-primary text-on-primary font-label-caps rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                    CREATE ROOM
+                </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col p-canvas-margin gap-gutter relative">
+<!-- Hint & Timer Bar -->
+<div class="glass-panel rounded-2xl p-4 flex items-center justify-between px-8">
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-outline-variant uppercase mb-1">Guess the Word</span>
+<div class="flex gap-4 font-label-caps text-2xl tracking-[0.2em] text-on-surface">
+<span>A</span>
+<span class="border-b-2 border-outline-variant w-4 inline-block mx-1"></span>
+<span class="border-b-2 border-outline-variant w-4 inline-block mx-1"></span>
+<span>R</span>
+<span class="border-b-2 border-outline-variant w-4 inline-block mx-1"></span>
+<span class="border-b-2 border-outline-variant w-4 inline-block mx-1"></span>
+<span>A</span>
+<span class="border-b-2 border-outline-variant w-4 inline-block mx-1"></span>
+<span>T</span>
+</div>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-label-caps text-[10px] text-outline-variant uppercase">Time Left</span>
+<span class="font-label-caps text-3xl timer-pulse">08s</span>
+</div>
+</div>
+<!-- Drawing Canvas Area -->
+<div class="flex-1 glass-panel rounded-3xl relative overflow-hidden flex items-center justify-center p-unit border-2 border-outline-variant/10 shadow-inner">
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
+<div class="w-full max-w-4xl aspect-[4/3] bg-white rounded-xl shadow-2xl relative overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="A digital drawing of a stylized astronaut floating in space, hand-drawn with vibrant neon brush strokes of purple, cyan, and hot pink. The style is loose and energetic, with visible sketch lines and glowing energy fields around the character. The background of the drawing is a clean white canvas, highlighting the artistic process." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwG8rI6iIlZLHCdw8beoaS2aJzT5Q7EPDvXBDAukMgl4Vjb49umpLzdQz8ANM4gt_2XbO1xrfnXAaKqlB3sYHI5EkK5jO9YeiTUlVSwJvcZhHNg9Ut6ujNQl5kt6j7xe_rRbRl2n3JFRUTQToJPhMhAU_XvhRFx0TaHJezQrjNou21lXrFSztPOx1G4ZpBp7qBKM2UQ0JVYcxx7wg9z40ZxcSTSjPuaqRV7Avad5jf9zaE2jz-Y7lgp_dQEbHcTCVTy-PwWc40Ym3T"/>
+</div>
+<!-- Floating Toolbar (Visual context) -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-toolbar-gap p-2 glass-panel rounded-full border border-white/10 shadow-2xl">
+<div class="flex items-center gap-1 px-3 border-r border-outline-variant/30">
+<span class="material-symbols-outlined text-outline">brush</span>
+<span class="material-symbols-outlined text-outline">palette</span>
+<span class="material-symbols-outlined text-outline">ink_eraser</span>
+</div>
+<div class="flex items-center gap-2 pr-2">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<div class="h-1 w-24 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full w-1/2 bg-secondary shadow-[0_0_8px_#5de6ff]"></div>
+</div>
+<div class="w-4 h-4 rounded-full bg-outline-variant"></div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="h-20 flex gap-4">
+<div class="flex-1 relative group">
+<input class="w-full h-full bg-surface-container-high border-2 border-outline-variant/30 rounded-2xl px-6 font-body-lg text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary/50 transition-all placeholder:text-outline/50" placeholder="Type your guess here..." type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant font-label-caps text-[10px]">ENTER TO SUBMIT</div>
+</div>
+<button class="px-10 h-full bg-secondary-container text-on-secondary-container font-headline-md rounded-2xl neon-border-cyan hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+                    GUESS
+                </button>
+</div>
+</main>
+<!-- Right Side: Chat Feed -->
+<aside class="w-80 h-full bg-surface-container border-l border-outline-variant/20 flex flex-col shrink-0">
+<div class="p-4 border-b border-outline-variant/20 flex items-center justify-between">
+<span class="font-label-caps text-on-surface uppercase tracking-wider">Social Feed</span>
+<span class="px-2 py-0.5 bg-surface-variant rounded text-[10px] text-on-surface-variant font-label-caps">12 ONLINE</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-feed">
+<!-- System Message -->
+<div class="flex flex-col items-center py-2">
+<span class="text-[10px] font-label-caps text-outline-variant uppercase">Round 3 Started</span>
+</div>
+<!-- Chat Message -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-player-tag text-on-surface-variant">NeonKnight</span>
+<span class="text-[10px] text-outline/50">14:02</span>
+</div>
+<div class="bg-surface-variant/50 p-3 rounded-2xl rounded-tl-none border border-outline-variant/10 text-on-surface-variant text-sm">
+                        Is it a bird? No it's a... 
+                    </div>
+</div>
+<!-- Correct Guess -->
+<div class="bg-secondary-container/10 border border-secondary/20 p-3 rounded-xl animate-bounce-subtle">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-[12px] font-player-tag text-secondary">ShadowPixel</span>
+</div>
+<p class="text-xs text-on-surface/80">Guessed the word in <span class="font-bold">12 seconds!</span> (+150 pts)</p>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-player-tag text-on-surface-variant">Luv2Draw</span>
+<span class="text-[10px] text-outline/50">14:03</span>
+</div>
+<div class="bg-surface-variant/50 p-3 rounded-2xl rounded-tl-none border border-outline-variant/10 text-on-surface-variant text-sm">
+                        This is taking too long lol
+                    </div>
+</div>
+<!-- Wrong Guess -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-player-tag text-on-surface-variant">RetroGamer</span>
+<span class="text-[10px] text-outline/50">14:03</span>
+</div>
+<div class="bg-surface-variant/50 p-3 rounded-2xl rounded-tl-none border border-outline-variant/10 text-on-surface-variant text-sm border-l-4 border-l-error">
+                        AEROPLANE
+                    </div>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-player-tag text-on-surface-variant">NeonKnight</span>
+<span class="text-[10px] text-outline/50">14:04</span>
+</div>
+<div class="bg-surface-variant/50 p-3 rounded-2xl rounded-tl-none border border-outline-variant/10 text-on-surface-variant text-sm border-l-4 border-l-error">
+                        ASTRONOMY
+                    </div>
+</div>
+</div>
+<!-- Mini Input for quick emoji/chat -->
+<div class="p-4 bg-surface-container-lowest border-t border-outline-variant/20">
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary">mood</button>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-sm placeholder:text-outline-variant" placeholder="Type a message..." type="text"/>
+</div>
+</div>
+</aside>
+</div>
+<!-- Background Shader Layer (Subtle atmosphere) -->
+<div class="fixed inset-0 -z-10 opacity-20 pointer-events-none">
+
+</div>
+<script>
+        // Micro-interaction: Focus input on slash key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/') {
+                e.preventDefault();
+                document.querySelector('input[placeholder="Type your guess here..."]').focus();
+            }
+        });
+
+        // Chat scroll to bottom
+        const chatFeed = document.getElementById('chat-feed');
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+
+        // Simulate new guess every few seconds
+        setInterval(() => {
+            const guesses = ["ASTEROID", "ASTRONAUT", "ALBATROSS"];
+            const users = ["NeonKnight", "RetroGamer", "PlayerOne"];
+            const randomUser = users[Math.floor(Math.random() * users.length)];
+            const randomGuess = guesses[Math.floor(Math.random() * guesses.length)];
+            
+            const msg = document.createElement('div');
+            msg.className = "flex flex-col gap-1 opacity-0 transition-opacity duration-300";
+            msg.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-[12px] font-player-tag text-on-surface-variant">${randomUser}</span>
+                    <span class="text-[10px] text-outline/50">just now</span>
+                </div>
+                <div class="bg-surface-variant/50 p-3 rounded-2xl rounded-tl-none border border-outline-variant/10 text-on-surface-variant text-sm border-l-4 border-l-error">
+                    ${randomGuess}
+                </div>
+            `;
+            chatFeed.appendChild(msg);
+            setTimeout(() => msg.classList.remove('opacity-0'), 100);
+            chatFeed.scrollTo({ top: chatFeed.scrollHeight, behavior: 'smooth' });
+            
+            // Limit messages to avoid bloat
+            if(chatFeed.children.length > 20) chatFeed.removeChild(chatFeed.children[0]);
+        }, 8000);
+    </script>
+</body></html>

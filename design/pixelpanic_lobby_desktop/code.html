@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PIXELPANIC | Pro-Level Social Drawing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#171f33",
+                    "outline": "#988d9f",
+                    "surface-variant": "#2d3449",
+                    "surface-bright": "#31394d",
+                    "on-surface-variant": "#cfc2d6",
+                    "outline-variant": "#4d4354",
+                    "on-tertiary-fixed-variant": "#85145a",
+                    "inverse-primary": "#842bd2",
+                    "on-secondary-container": "#00515d",
+                    "surface-container-low": "#131b2e",
+                    "inverse-on-surface": "#283044",
+                    "on-tertiary-fixed": "#3d0026",
+                    "on-tertiary": "#620040",
+                    "tertiary-fixed": "#ffd8e7",
+                    "surface-container-lowest": "#060e20",
+                    "secondary-fixed": "#a2eeff",
+                    "primary-fixed": "#f0dbff",
+                    "on-tertiary-container": "#560038",
+                    "on-surface": "#dae2fd",
+                    "on-primary-container": "#400071",
+                    "surface-container-high": "#222a3d",
+                    "on-secondary-fixed-variant": "#004e5a",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#6900b3",
+                    "primary-fixed-dim": "#ddb7ff",
+                    "on-primary": "#490080",
+                    "on-primary-fixed": "#2c0051",
+                    "tertiary-container": "#e364a7",
+                    "surface-container-highest": "#2d3449",
+                    "on-background": "#dae2fd",
+                    "on-secondary-fixed": "#001f25",
+                    "error": "#ffb4ab",
+                    "secondary-container": "#00cbe6",
+                    "secondary": "#5de6ff",
+                    "secondary-fixed-dim": "#2fd9f4",
+                    "tertiary-fixed-dim": "#ffafd3",
+                    "on-secondary": "#00363e",
+                    "error-container": "#93000a",
+                    "background": "#0b1326",
+                    "on-error": "#690005",
+                    "tertiary": "#ffafd3",
+                    "surface-dim": "#0b1326",
+                    "primary-container": "#b76dff",
+                    "primary": "#ddb7ff",
+                    "surface-tint": "#ddb7ff",
+                    "inverse-surface": "#dae2fd",
+                    "surface": "#0b1326"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "gutter": "16px",
+                    "canvas-margin": "32px",
+                    "toolbar-gap": "12px",
+                    "container-padding": "24px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": ["Sora"],
+                    "label-caps": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "player-tag": ["Sora"],
+                    "headline-md": ["Sora"],
+                    "display-lg": ["Sora"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "player-tag": ["14px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .pro-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+        .neon-border-cyan {
+            box-shadow: 0 0 10px rgba(0, 203, 230, 0.2);
+        }
+        .neon-text-purple {
+            text-shadow: 0 0 8px rgba(221, 183, 255, 0.5);
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-md border-b border-outline-variant/30 shadow-md flex justify-between items-center px-gutter py-unit h-16">
+<div class="flex items-center gap-8">
+<span class="font-display-lg text-display-lg-mobile tracking-tighter text-primary italic uppercase neon-text-purple">PIXELPANIC</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-secondary font-bold border-b-2 border-secondary pb-1 transition-all" href="#">Lobby</a>
+<a class="text-on-surface-variant font-medium hover:text-secondary-container transition-colors duration-200" href="#">Tournaments</a>
+<a class="text-on-surface-variant font-medium hover:text-secondary-container transition-colors duration-200" href="#">Shop</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary active:scale-95 transition-transform p-2">notifications</button>
+<button class="material-symbols-outlined text-primary active:scale-95 transition-transform p-2">settings</button>
+<div class="w-10 h-10 rounded-full border-2 border-secondary overflow-hidden bg-surface-variant">
+<img class="w-full h-full object-cover" data-alt="A futuristic circular avatar icon of a digital artist with glowing cyan hair, wearing high-tech VR goggles, set against a dark obsidian background with purple neon light trails." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCavgs8Q7QhCNBpNew_IbSCbcF1KghXtosuZTbY5_gzbDmLhO3r6FRqLnnM9JQDpWqO8hlMpbTPDhxFSDC4CGsHHby6JuY0vHirYMrlG1poT2F2l5J7iXJrVj_yuuY6AW4cwqq13G842oAQo6lBLBzsxXc9TmzwizCxEQwSMKZuejNO9xS4S_mEBm8tTKis2g7g_P1ai_TfaA6VWmvAIdZ4-3JR0ZVL4dcWLoeEOgxA76cqes6zgjrXgapSSgRdMNJw5WuchUBPZUWX"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 pt-20 bg-surface-container-low border-r border-outline-variant/20 shadow-xl hidden md:flex flex-col py-4 z-40">
+<div class="px-4 mb-8">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-12 h-12 rounded-full border-2 border-tertiary">
+<img class="w-full h-full rounded-full object-cover" data-alt="A professional gamer avatar, stylized digital portrait of a person with glowing purple cybernetic eye implants, minimal vector style, dark slate background with electric cyan highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdXL6A-bpLnxl5uAWiRbco_FMRHM6Nd11yjpnZZrLp4VZDI9io1IiY9pBiiBkvQVskdxYnbH42rRHrs9uKXXggkXYzdgAco0SvC6KWm3b7IPFvBHA0ssx1d_CC_1OA43hyK4zd2Gdu0iMKshCGI1dagqKtbbRHYhn2xHoGd69R_aW0nhO8wqRL6QgUt99o3CHUCqkAO1bxuwUqwFQJ4w5EnbxNr9WpINTMBoqDdLBpBXJwi5JRERrmi6nJu75jSkkCM_vmJzV0Pejg"/>
+</div>
+<div>
+<p class="font-player-tag text-player-tag text-on-surface">Player One</p>
+<p class="text-xs text-on-surface-variant">Level 42 Artist</p>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container font-bold rounded-xl py-3 active:scale-95 transition-transform shadow-[0_0_15px_rgba(183,109,255,0.3)]">
+                CREATE ROOM
+            </button>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<a class="bg-secondary-container text-on-secondary-container rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_0_15px_rgba(0,203,230,0.3)] transition-all" href="#">
+<span class="material-symbols-outlined">videogame_asset</span>
+<span class="font-body-md text-body-md">Lobby</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-bright/50 rounded-xl px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">photo_library</span>
+<span class="font-body-md text-body-md">Gallery</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-bright/50 rounded-xl px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-body-md text-body-md">Store</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-bright/50 rounded-xl px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-body-md text-body-md">Social</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:pl-64 pt-16 min-h-screen">
+<!-- Hero Section -->
+<section class="relative w-full h-[450px] overflow-hidden">
+
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+<div class="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tighter mb-4 animate-tighten">
+                    DOODLE. <span class="text-primary italic">GUESS.</span> DOMINATE.
+                </h1>
+<p class="max-w-2xl text-on-surface-variant text-body-lg font-body-lg mb-8">
+                    The world's premier high-stakes drawing competition. Prove your creativity in real-time battles against pro artists.
+                </p>
+<div class="flex gap-4">
+<button class="px-10 py-4 bg-secondary text-on-secondary font-bold rounded-xl text-lg pro-shadow hover:shadow-[0_0_25px_rgba(93,230,255,0.5)] transition-all active:scale-95">
+                        PLAY NOW
+                    </button>
+<button class="px-10 py-4 glass text-on-surface font-bold rounded-xl text-lg transition-all hover:bg-surface-variant">
+                        TRAINING
+                    </button>
+</div>
+</div>
+</section>
+<!-- Main Layout Grid -->
+<div class="px-gutter pb-canvas-margin grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Active Lobbies & Social -->
+<div class="lg:col-span-8 space-y-gutter">
+<!-- Section Header -->
+<div class="flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">bolt</span> Active Lobbies
+                    </h2>
+<div class="flex gap-2">
+<span class="text-xs font-label-caps text-on-surface-variant uppercase bg-surface-variant px-3 py-1 rounded-full">1,248 Online</span>
+</div>
+</div>
+<!-- Bento Lobby Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Lobby Card 1 (Large/Featured) -->
+<div class="glass p-6 rounded-xl border-l-4 border-secondary group hover:bg-surface-bright/40 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xl font-bold text-on-surface group-hover:text-secondary transition-colors">THE NEON DISTRICT</h3>
+<p class="text-sm text-on-surface-variant">Competitive • Ranked</p>
+</div>
+<span class="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-full text-xs font-label-caps">LIVE</span>
+</div>
+<div class="flex items-center -space-x-3 mb-6">
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800"><img class="rounded-full" data-alt="Avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUgJ_qJ0WBrcOLWbTtuYGNEMpHX16L3XtExG4_3mg3oymo_oMX0Jjiv-jWWOMPvxpY08VCL4VLOB0pgN_VmNbs0y8z0run0EPRtIdpQa7dSDmXVqWkVDa3EOELCVjBuNl7kyBOuDqKKLpz4rCw5jL80uckhDB0nxgUGrguJnKA49PlSBW9bOYzKKgFjckT99j3Yb0jWHD2o7hHoL6frOVVMixri-k3qsAZlEGtVEX0cKfkQMSqSu0geL8OpQdLyNUczTSe_CHurfZC"/></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800"><img class="rounded-full" data-alt="Avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo5GUKkac_yxnaH2cfQKCBeiIsnSn_AUbhKzmfrF71F1ncTD_bXV3GkWwq-gBdDQ_PJ6b45HFj0FsA6xARw0QhXY0rUiQY3brnIX4hQclvh9kJ1ghK5Gb8BLGtAgz5tMQuwEalaNftMNaIygvGbKDGFLcrCs_X7JuZG2UAAbfNJUmx7BrdYVyzkZ-eczNUZ2y17VL-xWzqVQbLxmkaofPXYvMgLn92D4wvfEcOYbLKuFNC7nFEWM2bPFNnq6jq5klj4Ksiq9kYQc7f"/></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800"><img class="rounded-full" data-alt="Avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6deCSnj7Y_Hk0Zy12hVYe7opvwkw9pxdbm3-0HB7MwrszDiDhG9wjdCuvUMmNdx_oYhrnjqlmS-uS6kx9yFzEGm7whDL_9KDPZl5JKT-5CZt5Ojva2F44OGDiP6LskmY8mg6LoHe4rGO1safG1Te8Xq_IWhpjOSNk10A2vtXc504PK5Z4oF7essSgFAs9kSF3oep7saDPZl5Ctwt5aCpDPHZKWjBK8Ad27ExZ68sbwBivMWndFFxRF7sEev7myPy4YMIBd4kOnWj6"/></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800 flex items-center justify-center text-xs font-bold text-on-surface-variant">+5</div>
+</div>
+<div class="flex justify-between items-center text-xs font-label-caps">
+<span class="text-on-surface-variant">Round 4/10</span>
+<span class="text-secondary">8/12 Players</span>
+</div>
+</div>
+<!-- Lobby Card 2 -->
+<div class="glass p-6 rounded-xl border-l-4 border-tertiary group hover:bg-surface-bright/40 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xl font-bold text-on-surface group-hover:text-tertiary transition-colors">ZEN GARDEN</h3>
+<p class="text-sm text-on-surface-variant">Relaxed • Social</p>
+</div>
+<span class="px-3 py-1 bg-tertiary/10 text-tertiary border border-tertiary/20 rounded-full text-xs font-label-caps">WAITING</span>
+</div>
+<div class="flex items-center -space-x-3 mb-6">
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800"><img class="rounded-full" data-alt="Avatar 4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCax1KpVJ1JPXI9bznkz9pblxgBmC4lWOarQBaU6UJc--wq2xuS0gImvUKw6Hi_ZifA_91YIZJ6gujBNIYTaecKeaOTQ3zoHpUFa4jixCDCObYUPaqEG0EZqyE3IUAYgViWTrpS5mr47sxslyOZS0IQpYBjeoemB3X6v2EFtUwom60N66utX6V_foeMpImw7Om_XIwWAKg8Kel81v86lfCjJYjQW1FvsOhDvb28DM8XUBflVKIxotwrtEMmIFjEJKKPIAwNHGRlT018"/></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800"><img class="rounded-full" data-alt="Avatar 5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd2JeCn-lcEkAV9hr5cUBQavVLkNtkrh_Kw9X_JQmzVq7VIabopW5OVJBttORZnLZBMsHJLfHU7dlepw1VDYxfQMQbyQR_WckTXBbNVBVoE3FPL2ZVvClfy6RwqwS0oosEtw2kBg6xj8QX1-kK85X1Z7s7wGavSQ0r4-6asjdW7vFZsldbEk7j99qu1jMO_BEDGF5Fa7m3GInELFCJT5olrThpluhuLyOK7ju9mNij2-qniyhZF3W29Jeb-jBVF5iWKeu6WobewhG2"/></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800 flex items-center justify-center text-xs font-bold text-on-surface-variant">+2</div>
+</div>
+<div class="flex justify-between items-center text-xs font-label-caps">
+<span class="text-on-surface-variant">Starting soon...</span>
+<span class="text-tertiary">4/10 Players</span>
+</div>
+</div>
+<!-- Lobby Card 3 -->
+<div class="glass p-6 rounded-xl border-l-4 border-primary group hover:bg-surface-bright/40 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xl font-bold text-on-surface group-hover:text-primary transition-colors">PIXEL PROS ONLY</h3>
+<p class="text-sm text-on-surface-variant">Hardcore • Lvl 30+</p>
+</div>
+<span class="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-label-caps">ENDING</span>
+</div>
+<div class="flex items-center -space-x-3 mb-6">
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800"><img class="rounded-full" data-alt="Avatar 6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEplhby6y-r0HJD7VN_KFhJ69Mzi9mvof9GeLavmxb372kvF8tBW6q4-zLc9mpsaN55nHZiXBHrGCqaHRgUvlI8F3F5v31cMCtFIFQZN35vm1-cNfLCLeBpNDPJMNIbqf47NUqdV3kx6xhGB62-zjK4xJwimXwcAMAOsw5gIn4CLW1WwRSY75NAQQLYgYLgVkpUD2IlyoZ1TTGjn6Yeh_Vmk9cKkTNX8D6cnwXvGwdZesPxQuxNmZfnKbJCrDmru6AN26P70uGr5A8"/></div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-slate-800 flex items-center justify-center text-xs font-bold text-on-surface-variant">+8</div>
+</div>
+<div class="flex justify-between items-center text-xs font-label-caps">
+<span class="text-on-surface-variant">Final Scoreboard</span>
+<span class="text-primary">10/12 Players</span>
+</div>
+</div>
+<!-- Lobby Card 4 -->
+<div class="glass p-6 rounded-xl border-l-4 border-outline-variant group hover:bg-surface-bright/40 transition-all cursor-pointer flex items-center justify-center">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl text-outline-variant mb-2">add_circle</span>
+<p class="text-sm font-bold text-on-surface-variant">Custom Lobby</p>
+</div>
+</div>
+</div>
+<!-- Global Feed -->
+<div class="glass rounded-xl overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant/30 bg-surface-container-high/50 flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">Global Feed</h3>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">refresh</span>
+</div>
+<div class="divide-y divide-outline-variant/20">
+<div class="p-4 flex gap-4 hover:bg-white/5 transition-colors">
+<div class="w-10 h-10 rounded-lg bg-primary-container/20 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary">emoji_events</span>
+</div>
+<div>
+<p class="text-on-surface"><span class="font-bold text-secondary">Vex_Art</span> just hit a 10-win streak in <span class="italic">The Neon District</span>!</p>
+<p class="text-xs text-on-surface-variant mt-1">2 minutes ago</p>
+</div>
+</div>
+<div class="p-4 flex gap-4 hover:bg-white/5 transition-colors">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container/20 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary">brush</span>
+</div>
+<div>
+<p class="text-on-surface"><span class="font-bold text-secondary">SketchMaster</span> uploaded a new masterpiece to the <span class="text-tertiary">Gallery</span>.</p>
+<p class="text-xs text-on-surface-variant mt-1">15 minutes ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Player Stats & Ranking -->
+<div class="lg:col-span-4 space-y-gutter">
+<!-- Player Profile Card -->
+<div class="glass rounded-2xl p-8 pro-shadow relative overflow-hidden group">
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-all"></div>
+<div class="flex flex-col items-center mb-8 relative">
+<div class="relative mb-4">
+<div class="w-24 h-24 rounded-full border-[3px] border-secondary p-1">
+<img class="w-full h-full rounded-full object-cover" data-alt="A detailed digital close-up of a futuristic esports player avatar profile, wearing sleek chrome headgear with glowing purple accents, high-contrast lighting, set in a deep space-black environment with vibrant cyan data overlays." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAC0vigiyPseyIsNqxEfiNHw5PjEC3rnS1A4diddXLWq9izPCfgAza34uF3gs3ifv9CSJrp9QN8DB5I9m8BxHLmMoBN9QPs8DGS1PPNMIT-0S-iw9YaUIcoYFYNAulwVf-CIvG9TXw0ZQAxH8cwHN3g1WwMUOJL6XkUQwGlrJzoUyUHJ9pHF8JbjssBMtujHRw455FyhbIAzrSnm8mlCOiwePDurSr17Sbb4Ky0KTaIbt21m4RyksvNIYI_qYNdzao3q8PcqdC81Q5"/>
+</div>
+<div class="absolute bottom-0 right-0 w-8 h-8 bg-surface-container rounded-full flex items-center justify-center border border-outline-variant">
+<span class="text-xs font-bold text-secondary">42</span>
+</div>
+</div>
+<h2 class="text-2xl font-bold text-on-surface mb-1">Player One</h2>
+<span class="text-on-surface-variant font-label-caps text-xs tracking-widest uppercase">Elite Illustrator</span>
+</div>
+<div class="space-y-6">
+<!-- XP Progress -->
+<div>
+<div class="flex justify-between text-xs font-label-caps mb-2">
+<span class="text-on-surface-variant uppercase">XP Progress</span>
+<span class="text-primary">8,450 / 10,000</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-secondary w-[84.5%] rounded-full shadow-[0_0_8px_rgba(183,109,255,0.6)]"></div>
+</div>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-highest/40 p-4 rounded-xl border border-outline-variant/30 text-center">
+<p class="text-2xl font-display-lg text-secondary">152</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant uppercase tracking-tighter">Lifetime Wins</p>
+</div>
+<div class="bg-surface-container-highest/40 p-4 rounded-xl border border-outline-variant/30 text-center">
+<p class="text-2xl font-display-lg text-tertiary">78%</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant uppercase tracking-tighter">Guess Accuracy</p>
+</div>
+</div>
+<button class="w-full py-4 glass border-primary/30 text-primary font-bold rounded-xl hover:bg-primary/10 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+                            VIEW FULL CAREER
+                        </button>
+</div>
+</div>
+<!-- Daily Challenges -->
+<div class="glass p-6 rounded-2xl">
+<h3 class="font-headline-md text-lg text-on-surface mb-4">Daily Missions</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-4">
+<div class="w-2 h-10 bg-secondary rounded-full"></div>
+<div class="flex-grow">
+<p class="text-sm font-bold text-on-surface">Speed Demon</p>
+<p class="text-xs text-on-surface-variant">Guess 5 words in under 10 seconds</p>
+</div>
+<span class="text-xs font-bold text-secondary">2/5</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-2 h-10 bg-primary rounded-full"></div>
+<div class="flex-grow">
+<p class="text-sm font-bold text-on-surface">Artisan</p>
+<p class="text-xs text-on-surface-variant">Win a round with a 5-star rating</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-sm">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                // Potential hover sound effect or subtle animation trigger
+            });
+        });
+
+        // Simple parallax effect for hero text
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroText = document.querySelector('.animate-tighten');
+            if (heroText) {
+                heroText.style.transform = `translateY(${scrolled * 0.1}px)`;
+            }
+        });
+    </script>
+</body></html>
