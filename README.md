@@ -3,10 +3,6 @@
 A real-time multiplayer drawing/guessing game (Pictionary-style). Guest-only
 play, friend-group scale — no accounts, no Redis, no horizontal scaling infra.
 
-**Status: Phase 1 (MVP) complete and manually verified.** See
-[HANDOFF.md](HANDOFF.md) for what's been tested, known gaps, and next steps.
-See [CLAUDE.md](CLAUDE.md) for the full architecture reference.
-
 ## Stack
 
 - **Client:** React 18 + TypeScript, Zustand, Tailwind, `perfect-freehand`,
