@@ -72,7 +72,75 @@ the assumption, keep moving).
   until Phase 3's other modes have been played for a while. Treat it as a
   stretch goal for this phase, not a committed deliverable.
 
+## Polish, animation & avatars (added per user request)
+
+Not from the original spec — added on top of it. Four asks, roughly ordered
+cheapest-to-most-involved:
+
+- **Auto-clear the canvas at turn boundaries.** Right now nothing clears the
+  committed canvas automatically — `DRAW_CLEAR` only fires if the drawer
+  manually hits the Clear button, so a new drawer's turn can start on top of
+  the previous drawing unless they remember to clear it themselves. This is
+  really a Phase 1/2 correctness gap that surfaced while scoping this list,
+  not a genuinely new Phase 3 feature — worth fixing independently of the
+  rest of Phase 3, before chaos modes add more turn-boundary complexity on
+  top of it. Fix: `RoomInstance.startTurn` broadcasts `DRAW_CLEAR` itself
+  when a new turn begins (word-choice phase), so the canvas is always blank
+  by the time a word gets chosen — no new event needed, reuses the existing
+  one, and it also naturally covers tournament matches since they run
+  through the same `startTurn`.
+- **An animated, doodle-themed background**, in the spirit of the reference
+  image (a tiled pattern of light hand-drawn icons — pencils, stars, speech
+  bubbles — drifting slowly behind the UI). Simplest option: author a small
+  set (8-10) of simple line-doodle icons as inline SVG, tile them as a
+  repeating CSS background behind the existing glass panels (low opacity, so
+  it reads as texture, not noise, and doesn't fight the panels' legibility),
+  and animate `background-position` slowly via a CSS keyframe for the drift.
+  No new asset pipeline or external library needed — this stays consistent
+  with the "Modern-Electric" glassmorphism direction already applied, just
+  adds the missing "alive background" layer the current flat `bg-background`
+  doesn't have.
+- **More animation throughout the game.** `index.css` already has
+  `timer-pulse`, `guess-correct`, and `shimmer` keyframes from the Phase 2
+  design pass — this extends that same CSS-only approach (no animation
+  library needed) to more moments: a turn-start transition when the drawer
+  is revealed, a score count-up tween instead of the number just jumping,
+  player join/leave list transitions, a small celebratory burst on a correct
+  guess (reuse/extend `guess-correct`), and a round-end reveal transition
+  before the canvas clears. Keep these all CSS transitions/keyframes rather
+  than reaching for Framer Motion or similar — nothing here needs
+  physics-based or gesture-driven animation, and pulling in an animation
+  library would be exactly the kind of infra this project keeps
+  deliberately avoiding.
+- **Per-player avatar customization ("bitmoji"-style character creator)**,
+  replacing today's initials-in-a-colored-circle `Avatar.tsx`. This is the
+  biggest of the four asks — the recommended v1 scope, and the reasoning
+  for it: a *fully compositional* system (independently mix-and-matchable
+  base/eyes/mouth/accessory layers, like the reference image's per-feature
+  arrow pickers) means designing and maintaining several art layers per
+  slot and a compositing renderer — real, ongoing art production for a
+  friend-group game. Simplest option that still delivers "pick your
+  character, cycle with arrows, hit dice to randomize": a curated set of
+  15-20 **complete** preset character illustrations (not independently
+  composable pieces) that the player cycles through with the same
+  left/right-arrow + dice UI as the reference, at name-entry time on
+  `HomePage` (and re-editable later from a small profile affordance).
+  Store the chosen preset id in `localStorage` next to the existing saved
+  name, and add it to `Player` (`shared/src/room.ts`) so it's visible to
+  everyone in the room — **this is a real, deliberate schema change**
+  (`Player.avatarId: string`), unlike most of the rest of this document.
+  `Avatar.tsx` renders the chosen preset image instead of initials, with
+  initials kept as the fallback for anyone who hasn't picked one. True
+  independently-composable layers (matching the reference image's per-slot
+  arrows exactly) are a reasonable v2 if the preset set turns out too
+  limiting, but shouldn't be the v1 bar.
+
 ## Implementation order
+
+**Wave 0 — do first, ahead of everything else above**
+0. Canvas auto-clear at turn boundaries — a correctness fix, not a feature;
+   fixing it before Wave A means chaos-mode turn transitions (bounty rounds,
+   reverse mode, curse words) never have to think about stale canvas state.
 
 **Wave A — low risk, self-contained, ship first**
 1. Near-miss taunt (server-side diff, one new lightweight event)
@@ -102,6 +170,18 @@ the assumption, keep moving).
 10. Ghost drawing — only once Wave A–C have generated enough game history to
     aggregate from. Needs its own design pass when picked up (stroke storage
     format, aggregation/rendering algorithm, when to show the overlay).
+
+**Wave E — polish, animation & avatars**
+11. Animated doodle background + expanded game animations — purely additive
+    CSS/visual work, no dependency on any chaos mode, can genuinely run
+    whenever (including in parallel with Waves A–C if there's a second
+    person free to do it).
+12. Avatar customization — do this one on its own, not squeezed in alongside
+    a chaos-mode wave, since it's the one item in this whole document with a
+    real `Player` schema change; touching it at the same time as, say,
+    reverse mode (which also changes what's broadcast about `turn`/`Player`)
+    is how two unrelated changes end up merge-conflicting over the same
+    types for no good reason.
 
 Production-readiness work (below) can run in parallel with Waves A–C; the
 final security/deploy pass should happen after everything else, following a
