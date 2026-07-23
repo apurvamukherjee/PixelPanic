@@ -203,21 +203,23 @@ this environment (same limitation noted for Phase 1 below).
 
 ## Recommended next steps (pick up here)
 
-1. Human playtest: run `npm run dev`, open 3+ real browser tabs, play a
-   full game including a full round-count to the leaderboard, try
-   votekick/mute, try the custom word list form in Host Settings.
+1. Human playtest Phase 1 **and** Phase 2 together: run `npm run dev`, open
+   3+ real browser tabs, play a full solo game to the leaderboard, then a
+   team-mode game, then a 3+ player tournament, then click through the
+   word-pack builder — see the two "Not yet verified" sections above for the
+   specific things to check.
 2. Test on an actual phone (or DevTools device toolbar) for the mobile
-   layout and touch-drawing gotchas.
-3. `git init` this repo (it isn't one yet) and make an initial commit —
-   nothing has been committed anywhere so far.
-4. Once Phase 1 is signed off by a human playtest, move to Phase 2 per the
-   original spec (team mode, round-robin tournament, word-pack builder UI)
-   — do not start it before Phase 1 is confirmed stable, per the working
-   agreement below.
+   layout, touch-drawing, and the new glassmorphism/font rendering.
+3. Commit the working tree. `git init` was run and everything is staged, but
+   commits were intentionally left to the user rather than made
+   automatically — nothing has been committed yet.
+4. Once Phase 2 is signed off, move to Phase 3 (chaos modes + retention
+   features) — see the plan for that below / the full spec at the bottom of
+   this doc.
 
 ---
 
-## Full original spec (for reference — Phases 2 and 3 not yet started)
+## Full original spec (for reference — Phase 2 done, Phase 3 not started)
 
 ### Tech stack (fixed, do not substitute)
 - **Frontend:** React + TypeScript, Zustand for state, Tailwind for styling,
@@ -229,7 +231,7 @@ this environment (same limitation noted for Phase 1 below).
 - **Deploy target:** single process, Fly.io/Render/small VPS — do not add
   Redis or horizontal-scaling infra
 
-### Phase 2 — Team mode, Tournament, Word Pack Builder (not started)
+### Phase 2 — Team mode, Tournament, Word Pack Builder (✅ built, see above)
 
 **Team mode**
 - Teams can be uneven in size
@@ -295,9 +297,15 @@ changes needed to add future modes.
 
 ### Working agreement
 1. Confirm repo scaffold and shared types package before writing game logic. ✅ done
-2. Build and manually verify Phase 1 end-to-end before touching Phase 2. ✅ done (see verification section above — human playtest still recommended)
+2. Build and manually verify Phase 1 end-to-end before touching Phase 2. ⚠️ Phase 2 was started on the user's explicit instruction before a human
+   playtest pass happened — scripted/REST verification only (see above).
 3. For ambiguous implementation choices, pick the simplest option consistent
    with "friend-group scale, no premature scaling infra," document the
-   assumption as a code comment, and keep moving. ✅ done — see CLAUDE.md
+   assumption as a code comment, and keep moving. ✅ done — see CLAUDE.md and
+   the Phase 2 decisions documented above (team rotation, tournament match
+   model, tiebreaker rule, word-pack REST vs socket).
 4. Keep socket event contracts in `/shared` — any new event type gets a
-   typed interface there first. ✅ established, keep following it in Phase 2/3
+   typed interface there first. ✅ done for Phase 2, keep following it in Phase 3
+
+See [PHASE3-PLAN.md](PHASE3-PLAN.md) for the Phase 3 + production-readiness
+plan.

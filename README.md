@@ -3,16 +3,22 @@
 A real-time multiplayer drawing/guessing game (Pictionary-style). Guest-only
 play, friend-group scale — no accounts, no Redis, no horizontal scaling infra.
 
-**Status: Phase 1 (MVP) complete and manually verified.** See
-[HANDOFF.md](HANDOFF.md) for what's been tested, known gaps, and next steps.
-See [CLAUDE.md](CLAUDE.md) for the full architecture reference.
+**Status: Phase 1 (MVP) + Phase 2 (team mode, tournament, word-pack builder)
+built, plus a full visual redesign pass.** Typechecked/built/linted clean;
+not yet human-playtested in a browser. See [HANDOFF.md](HANDOFF.md) for
+what's been tested, known gaps, and next steps, [CLAUDE.md](CLAUDE.md) for
+the Phase 1 architecture reference, and [PHASE3-PLAN.md](PHASE3-PLAN.md) for
+what's next (chaos modes, retention features, production-readiness).
 
 ## Stack
 
 - **Client:** React 18 + TypeScript, Zustand, Tailwind, `perfect-freehand`,
-  `socket.io-client`, React Router, Vite
+  `socket.io-client`, React Router, Vite. Visual design: Sora/Inter/JetBrains
+  Mono + Material Symbols icons, a glassmorphism "Modern-Electric" theme
+  (see `design/DESIGN.md`).
 - **Server:** Node.js + Fastify, `socket.io`, in-memory `Map` for live
-  room/game state, `better-sqlite3` for word packs + anon stats
+  room/game state, `better-sqlite3` for word packs, anon stats, and
+  tournament history
 - **Shared:** a `/shared` workspace package holding every socket event name
   and payload type, so client and server can't drift silently
 - **Auth:** none — guest play only, a `localStorage` anon ID drives
@@ -80,6 +86,7 @@ npm start -w server         # tsx src/index.ts, serves API + socket.io + client/
 
 ## Roadmap
 
-Phase 1 (this codebase) is the MVP turn-based loop. Phases 2 (team mode,
-round-robin tournament, word-pack builder UI) and 3 (chaos modes, rival
-system, near-miss taunts) are specced but not started — see HANDOFF.md.
+Phase 1 is the MVP turn-based loop. Phase 2 (team mode, round-robin
+tournament, word-pack builder UI) is built — see HANDOFF.md. Phase 3 (chaos
+modes, rival system, near-miss taunts) plus production-readiness hardening
+is planned but not started — see [PHASE3-PLAN.md](PHASE3-PLAN.md).

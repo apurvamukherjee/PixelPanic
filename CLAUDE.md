@@ -1,4 +1,4 @@
-# CLAUDE.md — Pixelpanic (Phase 1)
+# CLAUDE.md — Pixelpanic (Phase 1 + 2)
 
 ## What this is
 
@@ -7,10 +7,13 @@ style). Guest-only, friend-group scale: no accounts, no Redis, no
 horizontal-scaling infrastructure. One process serves the API, the socket
 connections, and (in production) the built client.
 
-This file documents **Phase 1 only** (the MVP turn-based loop). Phases 2
-(team mode, round-robin tournament, word-pack builder UI) and 3 (chaos
-modes, rival system, retention features) are specced in the original prompt
-but not yet built — see [HANDOFF.md](HANDOFF.md) for the full spec and status.
+This file documents **Phase 1 architecture in full, plus a Phase 2 addendum**
+(team mode, round-robin tournament, word-pack builder — see "Phase 2
+additions" below). Everything in the Phase 1 sections above that addendum is
+still accurate; Phase 2 only adds to it, nothing was restructured. Phase 3
+(chaos modes, rival system, retention features) is planned but not built —
+see [PHASE3-PLAN.md](PHASE3-PLAN.md). See [HANDOFF.md](HANDOFF.md) for
+current status and what's been verified.
 
 ## Stack (fixed, do not substitute)
 
@@ -37,13 +40,13 @@ README.md's Windows note if it fails with a node-gyp/Python error.
 shared/
   src/
     events.ts      ClientEvents / ServerEvents string-constant maps (no magic strings anywhere else)
-    room.ts         Player, RoomSettings, Room, DEFAULT_ROOM_SETTINGS
+    room.ts         Player (+ teamId), Team, RoomMode, RoomSettings (+ mode), Room (+ teams), DEFAULT_ROOM_SETTINGS
     game.ts         GamePhase, TurnState, GameState
-    words.ts        WordPack
-    chat.ts         ChatMessage
+    words.ts        WordPack + WordPackDetail (builder-only shape, see Phase 2 additions)
+    chat.ts         ChatMessage (channel: "room" | "team")
     drawing.ts      StrokePoint (normalized 0..1) + Stroke*Payload shapes
     scoring.ts       SCORING constants + computeGuesserPoints() — shared so client can preview live if ever needed
-    flags.ts         RoomFeatureFlags — Phase 2/3 hook, unused in Phase 1 logic
+    tournament.ts    TournamentMatch, TournamentStanding, TournamentState — Phase 2
     payloads.ts       every socket request/response payload interface
   → consumed as a real npm workspace package (`@pixelpanic/shared`), resolved
     straight to `src/` via package.json main/types — no build step, no dist/,
@@ -51,39 +54,46 @@ shared/
 
 server/
   src/
-    app.ts             Fastify instance: cors, /health, /api/wordpacks, static client/dist in prod
+    app.ts             Fastify instance: cors, /health, /api/wordpacks[...CRUD], static client/dist in prod
     index.ts            entrypoint: migrate() → buildApp() → attach socket.io
     config.ts            env/config (PORT, CORS_ORIGIN, DB_PATH)
     db/                  better-sqlite3: schema.sql (idempotent), seedWords.ts (150-word default pack),
-                          connection.ts, migrate.ts, wordPacksRepo.ts, statsRepo.ts
+                          connection.ts, migrate.ts (also does the one guarded ALTER TABLE for Phase 2 columns),
+                          wordPacksRepo.ts, statsRepo.ts, tournamentRepo.ts (Phase 2)
     game/
       RoomManager.ts      sole in-memory Map<roomId, RoomInstance> — replaces Redis. Room lifecycle,
                           quick-match matching, empty-room GC sweep.
       RoomInstance.ts     ★ the core file. One room's Room + GameState + chat ring buffer + turn timer.
                           Turn/round state machine, scoring, hint scheduling, votekick/mute,
-                          disconnect/reconnect/host-transfer policy. Read this file first.
+                          disconnect/reconnect/host-transfer policy, teams, tournament matches
+                          (implements TournamentHost). Read this file first.
       TurnStateMachine.ts  pure functions: nextTurnIndices()/initialTurnIndices() — round/turn math only
+      TeamRotation.ts       pure: buildTeamInterleavedRotation() — Phase 2, fair rotation across uneven teams
+      TournamentScheduler.ts pure: generateRoundRobinSchedule() (circle method) + pickNextMatch() — Phase 2
+      TournamentInstance.ts  Phase 2: owns a tournament's schedule/standings/tiebreaker, drives RoomInstance.startMatch
       HintScheduler.ts     computeHintSchedule() + buildMaskedWord() — pure, no state
       ScoreEngine.ts        thin wrapper around shared computeGuesserPoints() + drawer bonus constants
+                          + computeTeamScoreboard() (Phase 2, team avg score)
       WordSelector.ts       picks 3 word choices per turn, avoids repeats within a session
       guessMatcher.ts        normalizes + compares guess text to the target word
     rooms/roomCodes.ts     6-char Crockford base32 room code generator
-    sockets/               one file per concern (room/game/draw/chat/mod)Handlers.ts, wired in index.ts
+    sockets/               one file per concern (room/game/draw/chat/mod/team/tournament)Handlers.ts, wired in index.ts
     types/socketAugment.d.ts  augments socket.data with { roomId, anonId }
 
 client/
   src/
-    store/                5 separate Zustand stores (connection, room, game, chat, drawing) —
+    store/                6 separate Zustand stores (connection, room, game, chat, drawing, tournament) —
                           split so high-frequency events (stroke points, timer ticks) don't
                           re-render unrelated UI
     canvas/               strokeCapture.ts (local pointer capture → normalized deltas),
                           perfectFreehandRender.ts (getStroke → Path2D), remoteStrokeRenderer.ts
                           (two-canvas: committed bitmap + live in-progress layer)
     hooks/useSocket.ts     wires every non-drawing ServerEvent into the relevant store; mounted once in App.tsx
-    routes/               HomePage, RoomPage (single route that switches lobby/game/leaderboard by
-                          game phase, not by URL — the socket connection never remounts),
-                          JoinByLinkRedirect (cold-link name prompt)
-    components/          lobby/, game/, endgame/, shared/
+    routes/               HomePage, RoomPage (single route that switches lobby/game/leaderboard/tournament-
+                          standings by game phase + tournament state, not by URL — the socket connection
+                          never remounts), JoinByLinkRedirect (cold-link name prompt), WordPackBuilderPage (Phase 2)
+    components/          lobby/ (+ TeamAssignmentPanel), game/, endgame/ (+ TournamentStandingsScreen),
+                          wordpacks/ (Phase 2), shared/ (+ Icon.tsx — Material Symbols wrapper)
 ```
 
 ## The turn/round state machine
@@ -170,3 +180,60 @@ Documented inline as comments in `RoomInstance.ts`, summarized here:
 - Friend-group scale: no Redis, no multi-instance scaling infra.
 - Guest-only: no accounts, `localStorage` anon ID only.
 - Single process in production: server serves the built client too.
+
+## Phase 2 additions
+
+Team mode, round-robin tournament, and a word-pack builder, built on top of
+the Phase 1 engine above without changing any of it structurally. Full
+narrative in HANDOFF.md's "Phase 2 — what was built" section; the load-
+bearing facts anyone touching this code needs:
+
+- **Team mode barely touches the guessing engine.** Any non-drawer, on any
+  team, can still score a correct guess in the room channel exactly like
+  Phase 1 — team mode only changes *drawer rotation* (interleaved fairly
+  across teams by `TeamRotation.buildTeamInterleavedRotation`, called from
+  `RoomInstance.startTurn` only when `room.settings.mode === "team"`), the
+  *scoreboard display* (team avg is derived on every broadcast from
+  `Player.score`, never stored separately), and adds a *second chat channel*
+  scoped by a per-team Socket.IO room (`team:${roomId}:${teamId}`, joined at
+  team-assignment time).
+- **A tournament match is a normal 1-round, 2-player game**, not a separate
+  system. `RoomInstance.startMatch(anonA, anonB, onComplete)` seeds
+  `rotationAnonIds` to exactly those two (checked first in `startTurn`,
+  before the team/solo branches) and forces `game.totalRounds = 1`; on
+  completion it diffs each participant's score against a snapshot taken at
+  match start and hands the delta to `onComplete` instead of doing the
+  normal room-wide `GAME_END` broadcast. This means **everyone in the room
+  watches every match live** (spectators included) — matches are not run in
+  isolated parallel sessions. Because of that, `RoomInstance.eligibleGuessers`/
+  `isEligibleGuesser` restrict who can score a guess or count toward "did
+  everyone guess" to just the two match participants while `activeMatch` is
+  set — without this, a spectator typing the word in chat would score points
+  that don't belong to either player and could stop a match's turn from
+  ending early. If you ever touch guess-scoring logic, check this gate is
+  still applied.
+- **Tournament orchestration lives in `TournamentInstance`**, which
+  `RoomInstance` owns (`private tournament: TournamentInstance | null`) and
+  implements the narrow `TournamentHost` interface for (deliberately no
+  import cycle: `TournamentInstance.ts` never imports `RoomInstance.ts`).
+  Pairing is the classic round-robin circle method
+  (`TournamentScheduler.generateRoundRobinSchedule`); the tiebreaker (wins →
+  head-to-head → point differential → total points → join order) is
+  documented as a comment directly above `computeStandings()` in
+  `TournamentInstance.ts`.
+- **Word pack builder is REST, not sockets** (`app.ts`:
+  `GET/POST/PUT/DELETE /api/wordpacks[...]`), separate from the pre-existing
+  lobby "quick custom list" socket flow (`WORD_PACK_CREATE`), which is
+  unchanged. Ownership is enforced by an explicit `anonId` in every
+  request body/query param (there's still no auth/session anywhere in this
+  app) and checked in `wordPacksRepo.ts`; built-in packs (`is_built_in = 1`)
+  can never be updated or deleted. Per-word `category` and pack
+  `ownerAnonId` are exposed only via the separate `WordPackDetail` shape —
+  gameplay code (`WordSelector`, `RoomManager.resolveWordPack`,
+  `WordChoiceOverlay`) still only ever sees the original flat
+  `WordPack.words: string[]`.
+- **Design system**: `design/DESIGN.md` (+ mockups) is a reference for
+  visual language only — colors/type/glassmorphism/component patterns are
+  real and applied throughout `client/src`; the mockups' fictional feature
+  content (XP/levels, Store, Gallery, public lobby browser) is not part of
+  this app and was intentionally not built.
