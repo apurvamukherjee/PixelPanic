@@ -5,17 +5,7 @@ Pictionary, but built for a friend group who wants to jump into a browser
 tab together with zero setup: no accounts, no installs, no lobby friction.
 Just a name, a room code, and a pencil.
 
-<<<<<<< HEAD
-Pixelpanic is guest-only and friend-group scale by design. There's no
-Redis, no horizontal scaling, no multi-tenant infrastructure — one small
-process runs the whole game for as many rooms as one server can hold, which
-is exactly the right amount of infrastructure for a game meant to be played
-with people you actually know.
-
 ## The vision
-=======
-## Stack
->>>>>>> 70f9e6a57957e486710e581caaaac7254a70321d
 
 Most drawing games either stay a toy (one game mode, no depth) or bolt on
 scale nobody asked for (accounts, matchmaking, leaderboards for strangers).
@@ -48,6 +38,7 @@ answer made along the way.
 ## Features
 
 **Play**
+
 - Public quick-match or a private room you share by link — 12 players per room
 - Configurable round count, draw time, and hint frequency
 - Live incremental stroke sync (everyone watches the drawing happen, not a
@@ -57,14 +48,16 @@ answer made along the way.
 - Mod tools: votekick and mute, majority-gated server-side
 
 **Team mode**
+
 - Teams of any size, including uneven ones
 - Drawer rotation interleaves fairly across teams regardless of size — no
   team draws twice before every team has had a turn
-- Team score is the *average* of member scores, shown everywhere a team
+- Team score is the _average_ of member scores, shown everywhere a team
   total appears
 - A private team chat channel alongside the room-wide one
 
 **Tournament**
+
 - Round-robin scheduling (every player faces every other player) via the
   classic circle method, capped at 10 players
 - Live standings — wins, losses, point differential — with a documented
@@ -73,6 +66,7 @@ answer made along the way.
   together instead of splitting into isolated games
 
 **Word packs**
+
 - Build, edit, and delete your own word lists with per-word categories
 - Export any pack as JSON
 - Packs you create are instantly selectable when hosting a room
