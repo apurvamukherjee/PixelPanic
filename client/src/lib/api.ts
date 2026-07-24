@@ -1,4 +1,4 @@
-import type { WordPackDetail } from "@pixelpanic/shared";
+import type { WordPackDetail, RivalSummary } from "@pixelpanic/shared";
 
 export interface WordPackSummary {
   id: string;
@@ -65,4 +65,11 @@ export async function deleteWordPack(id: string, anonId: string): Promise<void> 
 
 export function wordPackExportUrl(id: string): string {
   return `/api/wordpacks/${id}/export`;
+}
+
+export async function fetchRival(anonId: string): Promise<RivalSummary | null> {
+  const res = await fetch(`/api/rivals?anonId=${encodeURIComponent(anonId)}`);
+  if (!res.ok) return null;
+  const body = (await res.json()) as { rival: RivalSummary | null };
+  return body.rival;
 }

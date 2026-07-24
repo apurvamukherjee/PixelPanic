@@ -1,15 +1,20 @@
 # PHASE3-PLAN — Chaos modes, retention features, production-readiness
 
-**Status:** Planning only — nothing in this document has been built yet.
-This is the plan for the last phase in the original spec (chaos modes +
-retention features), plus what it takes to actually call Pixelpanic
-"production ready" once that's done.
+**Status:** Built. Everything below is implemented — chaos modes (Waves
+0/A/B/C except ghost drawing, which stays deferred per this doc's own
+instruction), the polish/animation/avatar wave, and the production-
+readiness section — typechecked, linted, built, and unit-tested. See
+HANDOFF.md's "Phase 3 — what was built" section for what actually happened
+vs. this plan (a few resolved-in-practice refinements, e.g. momentum decay
+triggers on a missed turn rather than every turn boundary) and its "Not yet
+verified — Phase 3" section for what still needs a human browser playtest
+before calling this fully done. This document is kept as-is below for
+historical/design-rationale reference.
 
-Prerequisite before any of this starts: a human playtest of Phase 1 + 2 (see
-HANDOFF.md's "Not yet verified" sections). Phase 3 sits on top of the turn
-engine, team mode, and tournament system — bugs in the foundation will just
-get harder to isolate once chaos modes are checking flags inside the same
-code paths.
+~~Prerequisite before any of this starts: a human playtest of Phase 1 + 2~~
+— this was built on the user's explicit instruction ahead of that
+prerequisite (same call already made for Phase 2, see HANDOFF.md), so the
+playtest debt now covers Phase 1 through 3 together.
 
 ## Scope, per the original spec
 

@@ -1,5 +1,6 @@
 const STORAGE_KEY = "pixelpanic-anon-id";
 const NAME_KEY = "pixelpanic-name";
+const AVATAR_KEY = "pixelpanic-avatar-id";
 
 export function getAnonId(): string {
   let id = localStorage.getItem(STORAGE_KEY);
@@ -16,4 +17,13 @@ export function getSavedName(): string {
 
 export function saveName(name: string): void {
   localStorage.setItem(NAME_KEY, name);
+}
+
+export function getSavedAvatarId(): string | null {
+  return localStorage.getItem(AVATAR_KEY);
+}
+
+export function saveAvatarId(avatarId: string | null): void {
+  if (avatarId) localStorage.setItem(AVATAR_KEY, avatarId);
+  else localStorage.removeItem(AVATAR_KEY);
 }

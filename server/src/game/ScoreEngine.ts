@@ -1,8 +1,24 @@
-import { SCORING, computeGuesserPoints, type Player, type Team } from "@pixelpanic/shared";
+import {
+  SCORING,
+  computeGuesserPoints,
+  applyScoreMultipliers,
+  type Player,
+  type Team,
+} from "@pixelpanic/shared";
 
 export const ScoreEngine = {
   guesserPoints(secondsElapsedInTurn: number, drawTimeSec: number): number {
     return computeGuesserPoints(secondsElapsedInTurn, drawTimeSec);
+  },
+
+  // Phase 3: folds bounty/momentum multipliers onto a base guesser-points
+  // value. Kept separate from guesserPoints() so Phase 1/2 call sites that
+  // never pass chaos state stay byte-identical.
+  applyMultipliers(
+    basePoints: number,
+    opts: { isBounty?: boolean; momentumStreak?: number }
+  ): number {
+    return applyScoreMultipliers(basePoints, opts);
   },
 
   drawerPointsForGuesser(): number {

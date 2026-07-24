@@ -23,12 +23,14 @@ That plays out across three phases:
   a round-robin tournament for when "one more game" turns into "let's find
   out who's actually the best," and a word-pack builder so the words are
   always the ones your group actually wants to draw.
-- **Chaos and retention (planned)** — sabotage powerups, curse-words mode,
-  word mashups, momentum multipliers, bounty rounds, reverse mode, a rival
-  system that pairs you against someone at your skill level, and (once
-  enough games have been played to aggregate from) a ghost-drawing overlay
-  that shows the crowd's collective attempt at a word. See
-  [PHASE3-PLAN.md](PHASE3-PLAN.md) for the detailed plan.
+- **Chaos and retention (shipped, minus ghost drawing)** — sabotage
+  powerups, curse-words mode, word mashups, momentum multipliers, bounty
+  rounds, reverse mode, legacy titles, and a rival system that pairs you
+  against someone at your skill level. Ghost drawing (a crowd-average
+  overlay) is intentionally deferred — it needs a stroke-aggregation
+  pipeline fed by real play history that doesn't exist yet. See
+  [PHASE3-PLAN.md](PHASE3-PLAN.md) for the detailed plan and what's verified
+  vs. not.
 
 Every design decision in this codebase is filtered through one question:
 does this make game night better, or does it just make the architecture
@@ -91,11 +93,17 @@ answer made along the way.
 
 ## Status
 
-Phase 1 (the MVP loop) and Phase 2 (team mode, tournament, word-pack
-builder) are built, typechecked, linted, and built clean. Phase 2 hasn't had
-a human playtest pass in a real browser yet — see [HANDOFF.md](HANDOFF.md)
-for exactly what's been verified and what to check next before calling it
-done. Phase 3 is planned, not started — see [PHASE3-PLAN.md](PHASE3-PLAN.md).
+Phase 1 (the MVP loop), Phase 2 (team mode, tournament, word-pack builder),
+and Phase 3 (chaos modes, legacy titles, rival system, avatars, animated
+background — everything except ghost drawing) are built, typechecked,
+linted, built, and unit-tested clean (`npm run test` covers every pure
+scoring/rotation/scheduling/matching function). None of Phase 2 or Phase 3
+has had a full human playtest pass in a real browser yet — see
+[HANDOFF.md](HANDOFF.md) for exactly what's been verified (including a
+runtime smoke test of the new REST endpoints and DB migration) and what to
+check next. Production-readiness work (rate limiting, a client error
+boundary, Vitest coverage, Docker/Fly.io deploy config) is done — see
+"Deploying" below.
 
 ## Quick start
 
@@ -128,6 +136,7 @@ Other useful scripts:
 npm run typecheck    # tsc --noEmit across server + client
 npm run lint          # eslint across the whole monorepo
 npm run build          # builds the client, typechecks the server
+npm run test           # vitest — pure scoring/rotation/scheduling/matching functions
 ```
 
 Per-workspace equivalents: `npm run dev -w server`, `npm run dev -w client`, etc.
@@ -157,24 +166,91 @@ the way that needs to stay consistent as the codebase grows.
 
 Single process, single port: in production, `server` serves the built
 `client/dist` itself via `@fastify/static` (see `server/src/app.ts`) — no
-separate static host needed. Target: Fly.io / Render / a small VPS. No
-Redis, no multi-instance scaling — this is intentionally friend-group scale.
+separate static host needed. No Redis, no multi-instance scaling — this is
+intentionally friend-group scale, and it matters operationally too: this
+process holds live rooms/games in an in-memory `Map` (`RoomManager`), so it
+must run as exactly one always-on instance, never scaled to zero or
+horizontally.
+
+### Fly.io (Docker)
+
+A `Dockerfile`, `.dockerignore`, and `fly.toml` are included at the repo
+root — a multi-stage build (full devDependencies to compile
+`better-sqlite3` and build the client, then a slim runtime image) that
+matches this project's existing scripts (`npm run build -w client`,
+`npm start -w server`) exactly, no new build steps invented.
+
+```bash
+flyctl auth login
+flyctl launch --no-deploy          # confirms/creates the app from fly.toml
+flyctl volumes create pixelpanic_data --size 1 --region iad
+flyctl deploy
+```
+
+The volume is required — `DB_PATH` (word packs, anon stats, tournament
+history, rival pairings, unlocked titles) points at `/data`, which is only
+persistent across redeploys if it's a mounted Fly volume rather than the
+container's own ephemeral filesystem. `fly.toml` also pins
+`min_machines_running = 1` / `auto_stop_machines = false` for the
+in-memory-state reason above.
+
+### Manual (any VPS/Render)
 
 ```bash
 npm run build -w client   # produces client/dist
 npm start -w server         # tsx src/index.ts, serves API + socket.io + client/dist
 ```
 
+Set `DB_PATH` to a path on a persistent volume/disk before running in
+production, and `CORS_ORIGIN` if the client is ever served from a different
+origin than the API (same-origin static serving, as above, doesn't need it).
+
+## Security notes
+
+No auth exists anywhere in this app, by design (guest-only, per the
+non-negotiables) — this section documents what that tradeoff actually means
+in practice rather than leaving it implicit:
+
+- **`anonId` ownership is spoofable.** Word packs, rival pairings, and
+  stats are all keyed by a client-supplied `anonId` (a `localStorage` UUID)
+  with no server-side proof of identity. Anyone who learns/guesses another
+  player's `anonId` could act as them against these endpoints. Acceptable
+  at friend-group scale; would need real auth before this trust model holds
+  up for strangers.
+- **Rate limiting** is in place as abuse mitigation, not an identity
+  control: `@fastify/rate-limit` on the REST surface (120 req/min per IP
+  baseline, 20 req/min on `/api/wordpacks/*` writes and `/api/rivals`), plus
+  an in-memory token-bucket (`server/src/utils/rateLimiter.ts`) on chat/
+  guess submission and votekick over sockets.
+- **User text rendering**: React escapes by default and no
+  `dangerouslySetInnerHTML`/`eval`/`new Function` exists anywhere in
+  `client/src` (confirmed by grep during this pass) — chat, guesses, names,
+  and word-pack content all render as plain text.
+- **`npm audit`** currently reports moderate-severity advisories in
+  `@fastify/static` (directory-listing path traversal — not applicable
+  here, since directory listing is never enabled), `vite`/`esbuild`/
+  `vitest` (dev-server-only exposure, not present in the built production
+  bundle), and `react-router-dom` (open-redirect fix requires a v7 major
+  upgrade). None are fixed by `npm audit fix` without a breaking major
+  bump; flagged here as a known, deferred cleanup rather than silently
+  ignored — worth a dedicated upgrade pass before treating this as fully
+  hardened.
+
 ## Roadmap
 
 - **Phase 1 — the core loop.** ✅ Shipped.
 - **Phase 2 — team mode, tournament, word-pack builder.** ✅ Shipped, pending
   human playtest.
-- **Phase 3 — chaos modes + retention.** 📋 Planned — see
-  [PHASE3-PLAN.md](PHASE3-PLAN.md) for sabotage powerups, curse words,
-  word mashups, momentum, bounty rounds, reverse mode, a rival system,
-  near-miss taunts, and (last, once there's enough game history to
-  aggregate from) ghost drawing.
+- **Phase 3 — chaos modes + retention.** ✅ Shipped (sabotage powerups,
+  curse words, word mashups, momentum, bounty rounds, reverse mode,
+  near-miss taunts, legacy titles, rival system, avatar customization,
+  animated background), pending human playtest — see
+  [PHASE3-PLAN.md](PHASE3-PLAN.md). Ghost drawing is the one deliberate
+  exception: deferred until enough games have been played to build a
+  stroke-aggregation pipeline from.
+- **Production readiness.** ✅ Vitest coverage for every pure function,
+  REST + socket rate limiting, a client error boundary, and a Docker/
+  Fly.io deploy path.
 
 ## Documentation map
 

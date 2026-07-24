@@ -1,0 +1,25 @@
+# Render Blueprint — genuinely free tier, no payment method required.
+# Trade-offs accepted for this path (vs. the Fly.io setup in fly.toml):
+#   - Free web services spin down after 15 min with no traffic and cold-
+#     start (30-60s) on the next request. Since this app holds live rooms
+#     in server memory (RoomManager), any game still running when the
+#     service sleeps would be dropped — acceptable for casual friend-group
+#     use, not for a service that must stay warm.
+#   - Persistent disks are a paid add-on on Render, so DB_PATH is left at
+#     its default (inside the container's own ephemeral filesystem) —
+#     word packs / stats / tournament history / rival pairings / unlocked
+#     titles reset on every redeploy or restart. Upgrade to a paid plan +
+#     a Render Disk (or move to the Fly.io path in fly.toml) once that
+#     matters more than the $0 cost.
+# Deploy: on Render's dashboard, "New +" -> "Blueprint" -> point at this
+# GitHub repo. Render reads this file and provisions the service below.
+services:
+  - type: web
+    name: pixelpanic
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 3001

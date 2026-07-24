@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
+import rateLimit from "@fastify/rate-limit";
 import fs from "node:fs";
 import { config } from "./config.js";
 import {
@@ -11,6 +12,9 @@ import {
   updateWordPack,
   deleteWordPack,
 } from "./db/wordPacksRepo.js";
+import { getOrCreateRival } from "./db/rivalsRepo.js";
+import { presenceTracker } from "./game/PresenceTracker.js";
+import type { RivalSummary } from "@pixelpanic/shared";
 
 const PACK_NAME_MAX_LEN = 40;
 const MIN_WORDS = 3;
@@ -42,6 +46,14 @@ export async function buildApp() {
 
   await app.register(cors, { origin: config.corsOrigin });
 
+  // Baseline abuse protection for the REST surface — this app has no auth
+  // (guest-only by design), so anonId-based ownership on word packs/rivals
+  // is trivially spoofable; rate limiting is the main defense against
+  // spamming those write routes. A per-route override below tightens the
+  // limit further for actual writes.
+  await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
+  const WRITE_RATE_LIMIT = { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } };
+
   app.get("/health", async () => ({ ok: true }));
 
   // Public summary list — used by the room-creation word-list dropdown.
@@ -57,6 +69,7 @@ export async function buildApp() {
 
   app.post<{ Body: { anonId?: string; name?: string; words?: WordInput[] } }>(
     "/api/wordpacks",
+    WRITE_RATE_LIMIT,
     async (req, reply) => {
       const { anonId, name, words } = req.body ?? {};
       if (!anonId) return reply.code(400).send({ error: "anonId required" });
@@ -77,6 +90,7 @@ export async function buildApp() {
 
   app.put<{ Params: { id: string }; Body: { anonId?: string; name?: string; words?: WordInput[] } }>(
     "/api/wordpacks/:id",
+    WRITE_RATE_LIMIT,
     async (req, reply) => {
       const { anonId, name, words } = req.body ?? {};
       if (!anonId) return reply.code(400).send({ error: "anonId required" });
@@ -99,6 +113,7 @@ export async function buildApp() {
 
   app.delete<{ Params: { id: string }; Querystring: { anonId?: string } }>(
     "/api/wordpacks/:id",
+    WRITE_RATE_LIMIT,
     async (req, reply) => {
       const anonId = req.query.anonId;
       if (!anonId) return reply.code(400).send({ error: "anonId query param required" });
@@ -115,6 +130,19 @@ export async function buildApp() {
     if (!pack) return reply.code(404).send({ error: "NOT_FOUND" });
     reply.header("Content-Disposition", `attachment; filename="${pack.id}.json"`);
     return pack;
+  });
+
+  // Phase 3 rival system — REST rather than sockets, mirroring the word-pack
+  // builder's precedent for session-independent, anonId-scoped profile data.
+  // Auto-pairs on first request if no pairing exists yet; a player with no
+  // game history (no anon_stats row) or no eligible candidate gets `null`.
+  app.get<{ Querystring: { anonId?: string } }>("/api/rivals", WRITE_RATE_LIMIT, async (req, reply) => {
+    const anonId = req.query.anonId;
+    if (!anonId) return reply.code(400).send({ error: "anonId query param required" });
+    const rival = getOrCreateRival(anonId);
+    if (!rival) return { rival: null };
+    const summary: RivalSummary = { ...rival, rivalOnline: presenceTracker.isOnline(rival.rivalAnonId) };
+    return { rival: summary };
   });
 
   // Single-process prod deploy: serve the built client if it exists (no-op in dev,

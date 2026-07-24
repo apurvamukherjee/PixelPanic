@@ -12,6 +12,7 @@ import { useConnectionStore } from "../../store/useConnectionStore";
 import { useGameStore } from "../../store/useGameStore";
 import { useRoomStore } from "../../store/useRoomStore";
 import { useDrawingStore } from "../../store/useDrawingStore";
+import { useChaosStore } from "../../store/useChaosStore";
 import { attachStrokeCapture } from "../../canvas/strokeCapture";
 import { StrokeRenderer } from "../../canvas/remoteStrokeRenderer";
 
@@ -29,6 +30,14 @@ export function DrawingCanvas() {
   const mySocketId = useRoomStore((s) => s.mySocketId);
   const drawerId = useGameStore((s) => s.turn?.drawerId ?? null);
   const isDrawer = drawerId !== null && drawerId === mySocketId;
+  const curseWordsOn = useRoomStore((s) => s.room?.settings.chaosModes.curseWords ?? false);
+  const blurActive = useChaosStore(
+    (s) => s.activeEffect?.effect === "blur" && s.activeEffect.expiresAt > Date.now()
+  );
+  // Curse words mode: the drawer draws blind — their own canvas render is
+  // skipped locally while strokes still broadcast normally, so everyone
+  // else sees the drawing in real time.
+  const hideOwnCanvas = curseWordsOn && isDrawer;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -65,12 +74,22 @@ export function DrawingCanvas() {
 
   useEffect(() => {
     if (!socket) return;
-    const onStart = (p: StrokeStartPayload) => rendererRef.current?.handleStart(p);
-    const onPoints = (p: StrokePointPayload) => rendererRef.current?.handlePoints(p);
-    const onEnd = (p: StrokeEndPayload) => rendererRef.current?.handleEnd(p);
-    const onFill = (p: DrawFillPayload) => rendererRef.current?.handleFill(p);
+    // Curse words mode: skip rendering the drawer's own strokes on their own
+    // canvas (strokes still broadcast normally, so everyone else renders
+    // them fine) — read live state at call time rather than closing over a
+    // render-time boolean, since this effect only re-subscribes on socket
+    // change.
+    const shouldHideForMe = () => {
+      const { room, mySocketId } = useRoomStore.getState();
+      const drawerId = useGameStore.getState().turn?.drawerId ?? null;
+      return (room?.settings.chaosModes.curseWords ?? false) && drawerId !== null && drawerId === mySocketId;
+    };
+    const onStart = (p: StrokeStartPayload) => !shouldHideForMe() && rendererRef.current?.handleStart(p);
+    const onPoints = (p: StrokePointPayload) => !shouldHideForMe() && rendererRef.current?.handlePoints(p);
+    const onEnd = (p: StrokeEndPayload) => !shouldHideForMe() && rendererRef.current?.handleEnd(p);
+    const onFill = (p: DrawFillPayload) => !shouldHideForMe() && rendererRef.current?.handleFill(p);
     const onClear = () => rendererRef.current?.handleClear();
-    const onUndo = (p: DrawUndoPayload) => rendererRef.current?.handleUndo(p.strokeId);
+    const onUndo = (p: DrawUndoPayload) => !shouldHideForMe() && rendererRef.current?.handleUndo(p.strokeId);
 
     socket.on(ServerEvents.DRAW_STROKE_START, onStart);
     socket.on(ServerEvents.DRAW_STROKE_POINT, onPoints);
@@ -120,14 +139,26 @@ export function DrawingCanvas() {
       ref={containerRef}
       data-testid="drawing-canvas"
       className="relative aspect-[4/3] w-full touch-none overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]"
+      style={blurActive ? { filter: "blur(6px)" } : undefined}
     >
-      <canvas ref={committedRef} className="absolute inset-0 h-full w-full" />
+      <canvas ref={committedRef} className="absolute inset-0 h-full w-full" style={hideOwnCanvas ? { opacity: 0 } : undefined} />
       <canvas
         ref={liveRef}
         data-testid="live-canvas"
         className="absolute inset-0 h-full w-full"
-        style={{ pointerEvents: isDrawer ? "auto" : "none", touchAction: "none" }}
+        style={{
+          pointerEvents: isDrawer ? "auto" : "none",
+          touchAction: "none",
+          opacity: hideOwnCanvas ? 0 : 1,
+        }}
       />
+      {hideOwnCanvas && (
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-container-highest p-4 text-center">
+          <span className="font-display text-sm font-bold uppercase tracking-wide text-tertiary">
+            Curse words: you're drawing blind! Everyone else can see it.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

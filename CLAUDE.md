@@ -7,13 +7,14 @@ style). Guest-only, friend-group scale: no accounts, no Redis, no
 horizontal-scaling infrastructure. One process serves the API, the socket
 connections, and (in production) the built client.
 
-This file documents **Phase 1 architecture in full, plus a Phase 2 addendum**
-(team mode, round-robin tournament, word-pack builder — see "Phase 2
-additions" below). Everything in the Phase 1 sections above that addendum is
-still accurate; Phase 2 only adds to it, nothing was restructured. Phase 3
-(chaos modes, rival system, retention features) is planned but not built —
-see [PHASE3-PLAN.md](PHASE3-PLAN.md). See [HANDOFF.md](HANDOFF.md) for
-current status and what's been verified.
+This file documents **Phase 1 architecture in full, plus Phase 2 and Phase 3
+addenda** (Phase 2: team mode, round-robin tournament, word-pack builder —
+see "Phase 2 additions" below. Phase 3: chaos modes, legacy titles, rival
+system, avatars — see "Phase 3 additions" below). Everything in the earlier
+sections is still accurate; each phase only adds to it, nothing was
+restructured. See [PHASE3-PLAN.md](PHASE3-PLAN.md) for the detailed
+per-feature design rationale and [HANDOFF.md](HANDOFF.md) for current status
+and what's been verified.
 
 ## Stack (fixed, do not substitute)
 
@@ -244,3 +245,71 @@ bearing facts anyone touching this code needs:
   real and applied throughout `client/src`; the mockups' fictional feature
   content (XP/levels, Store, Gallery, public lobby browser) is not part of
   this app and was intentionally not built.
+
+## Phase 3 additions
+
+Chaos modes, legacy titles, a rival system, and avatar customization, built
+on top of the Phase 1+2 engine without restructuring it. Full narrative in
+HANDOFF.md's "Phase 3 — what was built" section; the load-bearing facts:
+
+- **`chaosModes` is a plain bag of independent booleans on `RoomSettings`**
+  (`shared/src/room.ts`), reusing `ROOM_UPDATE_SETTINGS` exactly like every
+  other setting — no new DB table, per the original spec's own instruction.
+  `RoomInstance` reads it live in `startGame`/`startTurn`/`handleChat`, but
+  freezes the per-turn-relevant subset (`isBountyRound`, `isReverseMode`,
+  `isMashupRound`, `mashupVoteOpen`) onto `TurnState` at `startTurn` so
+  scoring/eligibility logic doesn't re-read `room.settings` mid-turn.
+- **Momentum streaks and sabotage's pending-powerup/active-swap state live
+  as anonId-keyed private `Map`s directly on `RoomInstance`** (`streaks`,
+  `pendingPowerup`, `activeSwaps`), the same pattern `graceTimers` already
+  used — anonId, not socket.id, so state survives a reconnect. Momentum
+  decays (resets to 0) when a player was eligible to guess a turn but
+  didn't, not on every turn boundary — the plan's original "decays quickly"
+  wording was resolved this way because a flat per-turn reset would cap the
+  streak at 1 and defeat the multiplier ramp entirely.
+- **Near-miss detection must be server-side**: guessers' clients only ever
+  see `turn.maskedWord`, never the real word, so the Levenshtein check
+  (`guessMatcher.isNearMiss`) runs in `RoomInstance.handleChat` right next
+  to the exact-match check, and the result is a private `NEAR_MISS` emit —
+  not a client-computable diff, despite the original spec's "pure
+  client-side" framing.
+- **Reverse mode does not change who draws** — it only swaps which side of
+  the `TURN_START` broadcast is stripped of the real word, and narrows
+  `eligibleGuessers`/`isEligibleGuesser` to just the nominal drawer (since
+  everyone else already knows the word, letting them "guess" would be
+  meaningless/exploitable). This is a deliberate simplification of an
+  underspecified spec item — see PHASE3-PLAN.md's own note that reverse
+  mode has "no real enforcement mechanism," resolved here by restricting who
+  can score rather than trying to police chat content.
+- **Word mashup's "room votes on best interpretation"** doesn't map onto a
+  single-drawer-per-turn engine, so the resolved reading is: a 15s vote
+  window (`turn.mashupVoteOpen`) opens after a mashup round's normal
+  `ROUND_END`, sourced from non-winning guesses typed during that turn
+  (`RoomInstance.mashupCandidateByAnon`) — a sub-state of the `roundEnd`
+  phase, not a new `GamePhase`.
+- **Legacy titles fixed a real Phase 1/2 gap**: `endGame()` was calling
+  `recordGameEndStats` with `roundsDrawn`/`correctGuesses` hardcoded to `0`.
+  Both are now tracked per-game (`RoomInstance.gameStats`, an anonId-keyed
+  map incremented in `startTurn`/`handleCorrectGuess`) and passed through
+  for real — titles in `shared/src/titles.ts` (names) +
+  `server/src/db/titlesRepo.ts` (unlock checks against `anon_stats`) depend
+  on these being accurate.
+- **Rival system is REST, not sockets** (`GET /api/rivals?anonId=` in
+  `app.ts`), following the word-pack builder's precedent for
+  session-independent profile data. Auto-pairs on first request by closest
+  lifetime average score (`server/src/db/rivalsRepo.ts`); a
+  `PresenceTracker` singleton (`server/src/game/PresenceTracker.ts`),
+  updated from `RoomManager`'s existing join/leave paths, is the only thing
+  that pushes a socket event (`RIVAL_ONLINE_CHANGED`) — and only to an
+  *existing* pairing, never creating one itself.
+- **Ghost drawing is the one deliberate no-build**: `ChaosModes.ghostDrawing`
+  exists for schema completeness (host UI shows it disabled/"coming soon"),
+  but `RoomInstance.updateSettings` force-clears it on every patch. Per
+  PHASE3-PLAN.md's own instruction, it needs a stroke-aggregation pipeline
+  fed by real play history that doesn't exist yet.
+- **Avatars are curated presets, not composable layers**: `Player.avatarId`
+  (the one real schema change this phase) references one of 16 entries in
+  `client/src/lib/avatarPresets.ts` (Material Symbols icon + background
+  color, reusing the webfont already loaded rather than a bespoke art
+  pipeline). `Avatar.tsx` falls back to today's initials-circle when
+  `avatarId` is null/unrecognized.

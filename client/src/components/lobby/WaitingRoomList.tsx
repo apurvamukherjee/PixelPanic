@@ -12,8 +12,8 @@ export function WaitingRoomList() {
       </div>
       <ul className="flex flex-col gap-2">
         {room.players.map((p) => (
-          <li key={p.id} className="glass flex items-center gap-3 rounded-xl px-3 py-2">
-            <Avatar name={p.name} color={p.color} status={p.connected ? undefined : "idle"} />
+          <li key={p.id} className="player-join glass flex items-center gap-3 rounded-xl px-3 py-2">
+            <Avatar name={p.name} color={p.color} avatarId={p.avatarId} status={p.connected ? undefined : "idle"} />
             <span className="font-display font-medium text-on-surface">{p.name}</span>
             {p.isHost && (
               <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-primary">

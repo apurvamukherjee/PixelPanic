@@ -22,6 +22,9 @@ export const ClientEvents = {
   ROOM_SET_TEAMS: "room:setTeams",
   ROOM_SET_PLAYER_TEAM: "room:setPlayerTeam",
   TOURNAMENT_START: "tournament:start",
+  // Phase 3 — chaos modes
+  SABOTAGE_USE_POWERUP: "sabotage:usePowerup",
+  MASHUP_VOTE: "mashup:vote",
 } as const;
 
 export const ServerEvents = {
@@ -48,6 +51,14 @@ export const ServerEvents = {
   TOURNAMENT_STATE: "tournament:state",
   TOURNAMENT_MATCH_START: "tournament:matchStart",
   TOURNAMENT_COMPLETE: "tournament:complete",
+  // Phase 3 — chaos modes
+  NEAR_MISS: "chaos:nearMiss",
+  SABOTAGE_POWERUP_GRANTED: "sabotage:powerupGranted",
+  SABOTAGE_EFFECT_APPLIED: "sabotage:effectApplied",
+  MASHUP_VOTE_RESULT: "mashup:voteResult",
+  // Phase 3 — retention features
+  RIVAL_STATE: "rival:state",
+  RIVAL_ONLINE_CHANGED: "rival:onlineChanged",
 } as const;
 
 export type ClientEventName = (typeof ClientEvents)[keyof typeof ClientEvents];

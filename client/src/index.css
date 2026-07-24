@@ -74,6 +74,12 @@ body {
   animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Near-miss taunt — same bounce-in as guess-correct, amber instead of green
+   so it reads as "warm, not a win" at a glance. */
+.near-miss {
+  animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 @keyframes shimmer-sweep {
   0% {
     transform: translateX(-100%) rotate(45deg);
@@ -96,4 +102,87 @@ body {
   background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.12), transparent);
   transform: rotate(45deg);
   animation: shimmer-sweep 3s infinite;
+}
+
+/* Animated wordmark used in the global AppHeader — a slowly-cycling
+   gradient sweep across the primary/secondary/tertiary brand triad. */
+@keyframes logo-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.logo-wordmark {
+  background: linear-gradient(90deg, #ddb7ff, #5de6ff, #ffafd3, #ddb7ff);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: logo-gradient-shift 6s ease-in-out infinite;
+}
+
+/* Animated doodle-themed background layer, tiled behind every screen. */
+.doodle-background {
+  background-repeat: repeat;
+  background-size: 220px 220px;
+  opacity: 0.05;
+  animation: doodle-drift 90s linear infinite;
+}
+@keyframes doodle-drift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 440px 220px;
+  }
+}
+
+/* Turn-boundary reveal — a brief flash + slide-up used when a new drawer is
+   revealed (TURN_START) so the transition reads as an event, not a jump. */
+@keyframes turn-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.turn-reveal {
+  animation: turn-reveal 0.35s ease-out;
+}
+
+/* Score count-up target — the number itself doesn't tween (no JS
+   interpolation library here), but the pop draws the eye to the change. */
+@keyframes score-pop {
+  0% {
+    transform: scale(1.35);
+    color: #4ade80;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.score-pop {
+  display: inline-block;
+  animation: score-pop 0.3s ease-out;
+}
+
+/* Player join/leave list transitions. */
+@keyframes player-join {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.player-join {
+  animation: player-join 0.25s ease-out;
 }

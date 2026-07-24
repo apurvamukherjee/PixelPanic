@@ -3,6 +3,7 @@ import { useDrawingStore } from "../../store/useDrawingStore";
 import { useConnectionStore } from "../../store/useConnectionStore";
 import { useGameStore } from "../../store/useGameStore";
 import { useRoomStore } from "../../store/useRoomStore";
+import { useChaosStore } from "../../store/useChaosStore";
 import { Icon } from "../shared/Icon";
 
 const TOOLS: { tool: DrawTool; icon: string }[] = [
@@ -24,12 +25,20 @@ export function Toolbar() {
   const mySocketId = useRoomStore((s) => s.mySocketId);
   const drawerId = useGameStore((s) => s.turn?.drawerId ?? null);
   const isDrawer = drawerId !== null && drawerId === mySocketId;
+  const paletteFrozen = useChaosStore(
+    (s) => s.activeEffect?.effect === "freezePalette" && s.activeEffect.expiresAt > Date.now()
+  );
 
   if (!isDrawer) return null;
 
   return (
     <div className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
-      <div className="flex gap-1">
+      {paletteFrozen && (
+        <div className="w-full rounded-lg bg-tertiary/20 px-3 py-1.5 text-center font-mono text-[10px] uppercase tracking-wide text-tertiary">
+          Sabotaged! Your palette is frozen for a few seconds.
+        </div>
+      )}
+      <div className={`flex gap-1 ${paletteFrozen ? "pointer-events-none opacity-40" : ""}`}>
         {TOOLS.map((t) => (
           <button
             key={t.tool}
@@ -48,7 +57,7 @@ export function Toolbar() {
 
       <div className="hidden h-8 w-px bg-white/10 md:block" />
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className={`flex flex-wrap gap-1.5 ${paletteFrozen ? "pointer-events-none opacity-40" : ""}`}>
         {COLORS.map((c) => (
           <button
             key={c}
@@ -72,6 +81,7 @@ export function Toolbar() {
             value={size}
             onChange={(e) => setSize(Number(e.target.value))}
             className="w-24 accent-primary"
+            disabled={paletteFrozen}
           />
         </>
       )}

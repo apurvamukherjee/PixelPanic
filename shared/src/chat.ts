@@ -1,4 +1,4 @@
-export type ChatMessageKind = "chat" | "system" | "correctGuess";
+export type ChatMessageKind = "chat" | "system" | "correctGuess" | "nearMiss";
 
 // "team" channel only exists in team-mode rooms; omitted/"room" preserves
 // Phase 1 behavior (single room-wide channel) everywhere else.

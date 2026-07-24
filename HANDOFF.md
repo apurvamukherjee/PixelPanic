@@ -2,9 +2,15 @@
 
 **Date:** 2026-07-24
 **Status:** Phase 1 (MVP) built and scripted-verified. Phase 2 (team mode,
-round-robin tournament, word-pack builder) built on top of it — typechecked,
-linted, built, and REST-level smoke-tested, but **not yet human-playtested
-in a browser**. See the "Phase 2" section below for what to verify next.
+round-robin tournament, word-pack builder) and Phase 3 (chaos modes, legacy
+titles, rival system, avatars, animated background/UI polish — everything
+except ghost drawing, which is deliberately deferred) are both built on top
+of it — typechecked, linted, built, unit-tested (Vitest, 45 tests across
+every pure scoring/rotation/scheduling/matching function), and REST/
+migration-level runtime-smoke-tested, but **neither has been human-
+playtested in a browser yet**. Production-readiness work (rate limiting, a
+client error boundary, Docker/Fly.io deploy config) is also done. See the
+"Phase 2" and "Phase 3" sections below for exactly what to verify next.
 
 This doc is the "pick up where we left off" reference. For architecture and
 conventions, see [CLAUDE.md](CLAUDE.md) (Phase 1 + 2). For setup/run
@@ -90,6 +96,121 @@ browser, a global activity feed) that isn't part of the actual Pixelpanic
 spec — only the *visual language* (colors, type, glassmorphism, component
 styling patterns) was extracted and applied to this app's real screens/
 features, not that fictional content.
+
+## Phase 3 — what was built
+
+Full chaos-mode + retention feature set from PHASE3-PLAN.md, minus ghost
+drawing (see below). All modes are independent booleans on
+`RoomSettings.chaosModes`, host-toggleable from the lobby's settings panel,
+reusing the existing `ROOM_UPDATE_SETTINGS` patch mechanism — no schema
+changes beyond that bag, per the original spec's own instruction.
+
+**Momentum, bounty, near-miss.** A per-anonId streak counter
+(`RoomInstance.streaks`) increments on each correct guess and resets when a
+player whiffs a turn they were eligible to guess in (not on every turn
+boundary — a refinement over the plan's initial "decays every turn" wording,
+since that would have capped the streak at 1 and defeated the ramp). Feeds
+`ScoreEngine.applyMultipliers` (shared `applyScoreMultipliers`), which ramps
+guesser points up to a 2x multiplier at a 5-guess streak and separately
+applies a flat 5x on the one random bounty round chosen per game
+(`WordSelector.pickThreeHard`, filtered to the pack's longest ~40% of
+words). Near-miss taunts run server-side in `guessMatcher.isNearMiss`
+(Levenshtein distance ≤1, or ≤2 for words over 6 letters) since guessers'
+clients only ever see the masked word — a private `NEAR_MISS` emit, shown
+as a 4th `ChatMessage.kind` in `ChatPanel.tsx`.
+
+**Curse words & reverse mode.** Curse words is almost entirely client-side:
+`DrawingCanvas.tsx` skips calling the stroke renderer for the drawer's own
+canvas only when the flag is on, while strokes still broadcast normally so
+everyone else renders fine. Reverse mode flips which side of the
+`TURN_START` broadcast gets the real word (room sees it, the nominal
+"drawer" gets the masked version) and narrows `eligibleGuessers`/
+`isEligibleGuesser` so only that person can score a guess — everyone else
+already knows the word, so their guesses wouldn't be meaningful.
+
+**Sabotage powerups.** Crossing the momentum-streak threshold
+(`SCORING.SABOTAGE_STREAK_THRESHOLD`) grants one of three random powerups
+(blur/swapGuesses/freezePalette), used via a new `sockets/chaosHandlers.ts`
+against a target player. `swapGuesses` is implemented as a 3-second window
+where `RoomInstance.handleChat` re-attributes the sender's message to their
+swap partner's identity before any further processing — a light, reversible
+prank per the plan's own resolved reading of this ambiguous spec item, not
+a permanent effect.
+
+**Word mashup.** Resolved interpretation (documented here since "room votes
+on best interpretation" doesn't map cleanly onto a single-drawer-per-turn
+engine): one wildcard round gives the drawer a 2-word compound target
+(`WordSelector.pickMashup`); non-winning guesses typed during that turn
+become "candidate interpretations"; a 15s vote window opens after the turn
+ends (`turn.mashupVoteOpen`, a sub-state of the `roundEnd` phase rather than
+a new `GamePhase`) where everyone votes on the best guess for a flat bonus.
+
+**Legacy titles.** Fixed a real pre-existing gap along the way:
+`RoomInstance.endGame()` was calling `recordGameEndStats` with
+`roundsDrawn`/`correctGuesses` hardcoded to `0` — these are now tracked
+per-game and passed through for real. 8 static milestone titles (first win,
+century club, champion, etc. — see `shared/src/titles.ts` for display names
+and `server/src/db/titlesRepo.ts` for the unlock checks) are checked right
+after stats are recorded and folded onto the existing `GAME_END` payload
+(`unlockedTitles`) rather than a new event.
+
+**Rival system.** V1 scope per the plan: stat comparison only, no
+head-to-head match log. REST, not sockets (`GET /api/rivals?anonId=`),
+mirroring the word-pack builder's precedent for session-independent
+profile data — auto-pairs on first request by closest lifetime average
+score (`server/src/db/rivalsRepo.ts`). A lightweight cross-room
+`PresenceTracker` singleton (updated from `RoomManager`'s existing
+join/leave paths) pushes `RIVAL_ONLINE_CHANGED` when a pairing exists and
+the other side connects/disconnects — this never eagerly creates a pairing
+on its own, only on an explicit REST request. Surfaced via a new
+`AppHeader.tsx` (also carries the animated "Pixelpanic" wordmark and a "By
+Apurva" credit, mounted once outside the phase-switching routes so it
+persists across navigation).
+
+**Ghost drawing — deliberately not built.** PHASE3-PLAN.md's own
+instruction was "do not attempt until enough games are logged." The
+`ghostDrawing` flag exists on `ChaosModes` for schema completeness, but the
+host settings UI shows it disabled with a "coming soon" label and the
+server force-clears it on every settings update.
+
+**Avatars, animated background, animations, user guide.** A curated set of
+16 preset avatars (Material Symbols icon + background color combo, reusing
+the webfont already loaded rather than a bespoke art pipeline) picked via
+arrow-cycle/dice on `HomePage`, persisted to `localStorage` alongside the
+existing saved name, added to `Player.avatarId` (the one real schema change
+in this phase, per the plan). A tiled, slowly-drifting inline-SVG doodle
+background sits behind every screen; turn-start/score-change/player-join
+moments now use small CSS-only transitions (`turn-reveal`, `score-pop`,
+`player-join` in `index.css`), and the previously-unused `timer-pulse`/
+`shimmer` keyframes from Phase 2 are still available for further use. A new
+`FeatureGuide.tsx` on `HomePage` documents every feature/chaos
+mode/mod tool in-app so players don't need this file to understand what
+they're toggling.
+
+## Not yet verified — Phase 3
+
+Everything above typechecks, builds, lints, and passes its unit tests
+(`npm run test`). A runtime smoke test (server boot, migration, `/health`,
+`/api/wordpacks`, `/api/rivals` including actual pairing creation against
+real `anon_stats` rows) passed. Nothing has been clicked through in a real
+browser — same limitation as Phase 1/2, no browser automation available in
+this environment:
+
+- Every chaos mode toggle, in a live multi-tab game: momentum ramping
+  visibly, a bounty round actually landing and paying 5x, curse words
+  hiding the drawer's own canvas while others still see it, reverse mode's
+  inverted word visibility and guess eligibility, a sabotage powerup being
+  granted/used/expiring (all 3 effects), and a full mashup round through to
+  vote resolution.
+- Legacy titles actually unlocking and rendering on `LeaderboardScreen`.
+- The rival panel: pairing creation, the online/offline dot flipping live
+  across two tabs, stat accuracy after a real game.
+- The avatar picker end-to-end (pick → persists → shows up for other
+  players in `PlayerList`/`WaitingRoomList`/`LeaderboardScreen`), the doodle
+  background/animations rendering as intended, and the `AppHeader` wordmark/
+  rival icon not overlapping page content awkwardly on mobile.
+- The Docker image actually building and running (`docker build` was not
+  run in this environment) and a real `flyctl deploy`.
 
 ## Environment setup friction (resolved)
 
@@ -230,19 +351,23 @@ rather than trusting independent client-side computation.
 
 ## Recommended next steps (pick up here)
 
-1. Human playtest Phase 1 **and** Phase 2 together: run `npm run dev`, open
-   3+ real browser tabs, play a full solo game to the leaderboard, then a
-   team-mode game, then a 3+ player tournament, then click through the
-   word-pack builder — see the two "Not yet verified" sections above for the
-   specific things to check.
+1. Human playtest Phase 1, Phase 2, **and** Phase 3 together: run
+   `npm run dev`, open 3+ real browser tabs, play a full solo game to the
+   leaderboard, then a team-mode game, then a 3+ player tournament, then a
+   game with each chaos mode toggled on, then click through the word-pack
+   builder and the rival panel — see the three "Not yet verified" sections
+   above for the specific things to check.
 2. Test on an actual phone (or DevTools device toolbar) for the mobile
-   layout, touch-drawing, and the new glassmorphism/font rendering.
-3. Commit the working tree. `git init` was run and everything is staged, but
-   commits were intentionally left to the user rather than made
-   automatically — nothing has been committed yet.
-4. Once Phase 2 is signed off, move to Phase 3 (chaos modes + retention
-   features) — see the plan for that below / the full spec at the bottom of
-   this doc.
+   layout, touch-drawing, the glassmorphism/font rendering, and the new
+   `AppHeader`/doodle background not interfering with anything.
+3. Build the Docker image locally (`docker build -t pixelpanic .`) and run
+   it once before trusting it in Fly.io — it hasn't been built in this
+   environment (no Docker available here).
+4. `flyctl auth login` → `flyctl launch --no-deploy` → create the
+   `pixelpanic_data` volume → `flyctl deploy`, per README.md's "Deploying"
+   section.
+5. Commit the working tree once signed off — commits are intentionally left
+   to the user rather than made automatically.
 
 ---
 

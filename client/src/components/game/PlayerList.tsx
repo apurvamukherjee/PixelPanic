@@ -2,6 +2,7 @@ import { ClientEvents, type Player } from "@pixelpanic/shared";
 import { useRoomStore } from "../../store/useRoomStore";
 import { useGameStore } from "../../store/useGameStore";
 import { useConnectionStore } from "../../store/useConnectionStore";
+import { useChaosStore } from "../../store/useChaosStore";
 import { Avatar } from "../shared/Avatar";
 import { Icon } from "../shared/Icon";
 
@@ -11,23 +12,34 @@ function PlayerRow({
   isMe,
   isHost,
   isDrawer,
+  streak,
 }: {
   p: Player;
   score: number;
   isMe: boolean;
   isHost: boolean;
   isDrawer: boolean;
+  streak: number;
 }) {
   const socket = useConnectionStore((s) => s.socket);
+  const pendingPowerup = useChaosStore((s) => s.pendingPowerup);
+
+  const useSabotageOnTarget = () => {
+    if (!pendingPowerup) return;
+    socket?.emit(ClientEvents.SABOTAGE_USE_POWERUP, { powerup: pendingPowerup, targetPlayerId: p.id });
+    useChaosStore.getState().setPendingPowerup(null);
+  };
+
   return (
     <li
-      className={`flex items-center gap-2 rounded-xl border px-2 py-2 ${
+      className={`player-join flex items-center gap-2 rounded-xl border px-2 py-2 ${
         isDrawer ? "border-primary/30 bg-primary/10" : "border-white/5 bg-surface-container-high/50"
       } ${!p.connected ? "opacity-60" : ""}`}
     >
       <Avatar
         name={p.name}
         color={p.color}
+        avatarId={p.avatarId}
         size={32}
         status={isDrawer ? "drawing" : p.connected ? undefined : "idle"}
       />
@@ -40,9 +52,26 @@ function PlayerRow({
           <span className="font-mono text-[9px] uppercase tracking-wide text-primary/70">Drawing…</span>
         )}
       </div>
-      <span className="ml-auto font-mono text-sm text-on-surface-variant">{score}</span>
+      {streak > 0 && (
+        <span
+          title={`${streak} guess streak`}
+          className="flex items-center gap-0.5 rounded-full bg-tertiary/20 px-1.5 py-0.5 font-mono text-[10px] text-tertiary"
+        >
+          <Icon name="local_fire_department" className="!text-xs" filled /> {streak}
+        </span>
+      )}
+      <span key={score} className="score-pop ml-auto font-mono text-sm text-on-surface-variant">{score}</span>
       {!isMe && (
         <div className="flex gap-1">
+          {pendingPowerup && (
+            <button
+              title={`Use ${pendingPowerup} on ${p.name}`}
+              className="flex h-6 w-6 items-center justify-center rounded bg-tertiary/20 text-tertiary hover:bg-tertiary/40"
+              onClick={useSabotageOnTarget}
+            >
+              <Icon name="bolt" className="!text-sm" />
+            </button>
+          )}
           <button
             title="Vote kick"
             className="flex h-6 w-6 items-center justify-center rounded text-on-surface-variant hover:text-error"
@@ -71,10 +100,12 @@ export function PlayerList() {
   const isHost = useRoomStore((s) => s.isHost);
   const scoreboard = useGameStore((s) => s.scoreboard);
   const teamScoreboard = useGameStore((s) => s.teamScoreboard);
+  const momentum = useGameStore((s) => s.momentum);
   const drawerId = useGameStore((s) => s.turn?.drawerId ?? null);
   if (!room) return null;
 
   const scoreOf = (p: Player) => scoreboard[p.id] ?? p.score;
+  const streakOf = (p: Player) => momentum[p.anonId] ?? 0;
   const heading = "font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/60 px-1";
 
   if (room.settings.mode === "team" && room.teams.length > 0) {
@@ -106,6 +137,7 @@ export function PlayerList() {
                     isMe={p.id === mySocketId}
                     isHost={isHost}
                     isDrawer={p.id === drawerId}
+                    streak={streakOf(p)}
                   />
                 ))}
               </ul>
@@ -124,6 +156,7 @@ export function PlayerList() {
                   isMe={p.id === mySocketId}
                   isHost={isHost}
                   isDrawer={p.id === drawerId}
+                  streak={streakOf(p)}
                 />
               ))}
             </ul>
@@ -146,6 +179,7 @@ export function PlayerList() {
             isMe={p.id === mySocketId}
             isHost={isHost}
             isDrawer={p.id === drawerId}
+            streak={streakOf(p)}
           />
         ))}
       </ul>

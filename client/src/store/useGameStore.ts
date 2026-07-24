@@ -15,6 +15,8 @@ interface GameState {
   turn: TurnState | null;
   scoreboard: Record<string, number>;
   teamScoreboard: Record<string, number> | null; // teamId -> avg member score, team mode only
+  momentum: Record<string, number>; // anonId -> streak, Phase 3 momentum mode only
+  unlockedTitles: Record<string, string[]> | null; // anonId -> title ids unlocked at last GAME_END
   wordChoices: WordChoicesPayload | null;
   lastRoundEnd: RoundEndPayload | null;
   finalScoreboard: GameEndPayload["finalScoreboard"] | null;
@@ -36,6 +38,8 @@ export const useGameStore = create<GameState>((set) => ({
   turn: null,
   scoreboard: {},
   teamScoreboard: null,
+  momentum: {},
+  unlockedTitles: null,
   wordChoices: null,
   lastRoundEnd: null,
   finalScoreboard: null,
@@ -67,10 +71,11 @@ export const useGameStore = create<GameState>((set) => ({
     ),
 
   applyScoreUpdate: (payload) =>
-    set({
+    set((state) => ({
       scoreboard: payload.scoreboard,
       teamScoreboard: payload.teamScoreboard ?? null,
-    }),
+      momentum: payload.momentum ?? state.momentum,
+    })),
 
   applyRoundEnd: (payload) =>
     set((state) => ({
@@ -86,6 +91,7 @@ export const useGameStore = create<GameState>((set) => ({
       phase: "gameEnd",
       finalScoreboard: payload.finalScoreboard,
       teamScoreboard: payload.teamScoreboard ?? null,
+      unlockedTitles: payload.unlockedTitles ?? null,
     }),
 
   reset: () =>
@@ -94,6 +100,8 @@ export const useGameStore = create<GameState>((set) => ({
       turn: null,
       scoreboard: {},
       teamScoreboard: null,
+      momentum: {},
+      unlockedTitles: null,
       wordChoices: null,
       lastRoundEnd: null,
       finalScoreboard: null,

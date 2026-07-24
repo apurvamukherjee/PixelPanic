@@ -6,4 +6,6 @@ export * from "./chat.js";
 export * from "./drawing.js";
 export * from "./scoring.js";
 export * from "./tournament.js";
+export * from "./rival.js";
+export * from "./titles.js";
 export * from "./payloads.js";

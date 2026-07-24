@@ -50,3 +50,20 @@ CREATE TABLE IF NOT EXISTS tournament_matches (
   winner_anon_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_tournament_matches_tournament ON tournament_matches(tournament_id);
+
+-- Phase 3: legacy titles (milestone achievements), checked against
+-- anon_stats right after recordGameEndStats.
+CREATE TABLE IF NOT EXISTS unlocked_titles (
+  anon_id TEXT NOT NULL REFERENCES anon_players(anon_id),
+  title_id TEXT NOT NULL,
+  unlocked_at INTEGER NOT NULL,
+  PRIMARY KEY (anon_id, title_id)
+);
+
+-- Phase 3: rival system (v1 — stat comparison only, no head-to-head log).
+CREATE TABLE IF NOT EXISTS rivalries (
+  anon_id_a TEXT NOT NULL REFERENCES anon_players(anon_id),
+  anon_id_b TEXT NOT NULL REFERENCES anon_players(anon_id),
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (anon_id_a, anon_id_b)
+);

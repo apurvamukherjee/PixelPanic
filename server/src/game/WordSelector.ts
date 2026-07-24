@@ -39,4 +39,32 @@ export class WordSelector {
   markUsed(word: string): void {
     this.usedWords.add(word);
   }
+
+  // Phase 3 bounty rounds: filter to the longest ~40% of the pack (harder to
+  // draw/guess), falling back to the normal pool if the pack is too small
+  // for that filter to leave at least 3 words.
+  pickThreeHard(): [string, string, string] {
+    const sortedByLength = [...this.pack.words].sort((a, b) => b.length - a.length);
+    const hardPoolSize = Math.max(3, Math.ceil(sortedByLength.length * 0.4));
+    const hardPool = sortedByLength.slice(0, hardPoolSize);
+    let available = hardPool.filter((w) => !this.usedWords.has(w));
+    if (available.length < 3) available = hardPool;
+    const [a, b, c] = shuffle(available);
+    return [
+      a ?? hardPool[0]!,
+      b ?? hardPool[1 % hardPool.length]!,
+      c ?? hardPool[2 % hardPool.length]!,
+    ];
+  }
+
+  // Phase 3 word mashup: combines 2 random distinct pack words into one
+  // compound draw target (e.g. "banana shark"). Not tracked in usedWords —
+  // a mashup round is a one-off wildcard, not part of the normal repeat-
+  // avoidance pool.
+  pickMashup(): string {
+    const shuffled = shuffle(this.pack.words);
+    const first = shuffled[0] ?? this.pack.words[0]!;
+    const second = shuffled.find((w) => w !== first) ?? shuffled[1] ?? first;
+    return `${first} ${second}`;
+  }
 }

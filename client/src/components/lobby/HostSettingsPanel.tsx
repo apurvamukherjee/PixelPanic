@@ -3,6 +3,7 @@ import {
   ClientEvents,
   type HintFrequency,
   type WordPackCreateResult,
+  type ChaosModes,
 } from "@pixelpanic/shared";
 import { useRoomStore } from "../../store/useRoomStore";
 import { useConnectionStore } from "../../store/useConnectionStore";
@@ -10,6 +11,16 @@ import { fetchWordPacks, type WordPackSummary } from "../../lib/api";
 import { Button } from "../shared/Button";
 
 const HINT_OPTIONS: HintFrequency[] = ["off", "slow", "normal", "fast"];
+
+const CHAOS_MODE_INFO: { key: keyof ChaosModes; label: string; description: string; comingSoon?: boolean }[] = [
+  { key: "momentum", label: "Momentum", description: "Guess streaks ramp up your points, up to 2x." },
+  { key: "bounty", label: "Bounty round", description: "One random round is worth 5x points." },
+  { key: "curseWords", label: "Curse words", description: "The drawer can't see their own canvas." },
+  { key: "reverseMode", label: "Reverse mode", description: "Everyone but the drawer sees the word." },
+  { key: "mashup", label: "Word mashup", description: "One round combines 2 words; room votes on the best guess." },
+  { key: "sabotage", label: "Sabotage powerups", description: "Guess streaks earn a powerup to prank a rival." },
+  { key: "ghostDrawing", label: "Ghost drawing", description: "Coming soon — needs more game history first.", comingSoon: true },
+];
 
 const FIELD =
   "rounded-lg border border-white/10 bg-background px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary";
@@ -33,12 +44,20 @@ export function HostSettingsPanel() {
   if (!room) return null;
 
   if (!isHost) {
+    const activeChaos = CHAOS_MODE_INFO.filter((c) => room.settings.chaosModes[c.key]).map((c) => c.label);
     return (
-      <div className="glass rounded-2xl px-4 py-3 font-mono text-xs text-on-surface-variant">
-        Draw time: <span className="text-secondary">{room.settings.drawTimeSec}s</span> · Rounds:{" "}
-        <span className="text-secondary">{room.settings.roundCount}</span> · Hints:{" "}
-        <span className="text-secondary">{room.settings.hintFrequency}</span> · Mode:{" "}
-        <span className="text-secondary">{room.settings.mode}</span>
+      <div className="glass flex flex-col gap-1 rounded-2xl px-4 py-3 font-mono text-xs text-on-surface-variant">
+        <div>
+          Draw time: <span className="text-secondary">{room.settings.drawTimeSec}s</span> · Rounds:{" "}
+          <span className="text-secondary">{room.settings.roundCount}</span> · Hints:{" "}
+          <span className="text-secondary">{room.settings.hintFrequency}</span> · Mode:{" "}
+          <span className="text-secondary">{room.settings.mode}</span>
+        </div>
+        {activeChaos.length > 0 && (
+          <div>
+            Chaos: <span className="text-tertiary">{activeChaos.join(", ")}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -139,6 +158,30 @@ export function HostSettingsPanel() {
             ))}
         </select>
       </label>
+
+      <div className="flex flex-col gap-2">
+        <span className={SUBLABEL}>Chaos modes</span>
+        {CHAOS_MODE_INFO.map(({ key, label, description, comingSoon }) => (
+          <label
+            key={key}
+            className={`flex items-start gap-2.5 rounded-lg border border-white/5 bg-surface-container-high/40 px-3 py-2 ${
+              comingSoon ? "opacity-50" : ""
+            }`}
+          >
+            <input
+              type="checkbox"
+              className="mt-0.5 accent-tertiary"
+              checked={room.settings.chaosModes[key]}
+              disabled={comingSoon}
+              onChange={(e) => update({ chaosModes: { [key]: e.target.checked } })}
+            />
+            <span className="flex flex-col">
+              <span className="text-sm font-medium text-on-surface">{label}</span>
+              <span className="text-xs text-on-surface-variant">{description}</span>
+            </span>
+          </label>
+        ))}
+      </div>
 
       {!showCustom ? (
         <Button variant="secondary" onClick={() => setShowCustom(true)}>

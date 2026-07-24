@@ -17,12 +17,19 @@ import {
   type MutedPayload,
   type TournamentStatePayload,
   type TournamentCompletePayload,
+  type NearMissPayload,
+  type SabotagePowerupGrantedPayload,
+  type SabotageEffectAppliedPayload,
+  type MashupVoteResultPayload,
+  type RivalOnlineChangedPayload,
 } from "@pixelpanic/shared";
 import { useConnectionStore } from "../store/useConnectionStore";
 import { useRoomStore } from "../store/useRoomStore";
 import { useGameStore } from "../store/useGameStore";
 import { useChatStore } from "../store/useChatStore";
 import { useTournamentStore } from "../store/useTournamentStore";
+import { useChaosStore } from "../store/useChaosStore";
+import { useRivalStore } from "../store/useRivalStore";
 
 // Wires every non-drawing server event into the relevant store. Drawing
 // events are subscribed to directly inside DrawingCanvas (imperative canvas
@@ -120,6 +127,49 @@ export function useSocket() {
     socket.on(ServerEvents.MOD_VOTEKICK_UPDATE, onVotekickUpdate);
     socket.on(ServerEvents.MOD_MUTED, onMuted);
 
+    const onNearMiss = (payload: NearMissPayload) => {
+      useChatStore.getState().addMessage({
+        id: crypto.randomUUID(),
+        playerId: "system",
+        playerName: "System",
+        text: `"${payload.guess}" is ${payload.hint} — so close!`,
+        ts: Date.now(),
+        kind: "nearMiss",
+        channel: "room",
+        teamId: null,
+      });
+    };
+    const onSabotageGranted = (payload: SabotagePowerupGrantedPayload) => {
+      useChaosStore.getState().setPendingPowerup(payload.powerup);
+    };
+    const onSabotageEffect = (payload: SabotageEffectAppliedPayload) => {
+      useChaosStore.getState().applyEffect(payload);
+    };
+    const onMashupVoteResult = (payload: MashupVoteResultPayload) => {
+      useChatStore.getState().addMessage({
+        id: crypto.randomUUID(),
+        playerId: "system",
+        playerName: "System",
+        text:
+          payload.winnerId && payload.bonusAwarded > 0
+            ? `Mashup vote: best interpretation wins +${payload.bonusAwarded} points!`
+            : "Mashup vote: no votes were cast.",
+        ts: Date.now(),
+        kind: "system",
+        channel: "room",
+        teamId: null,
+      });
+    };
+    const onRivalOnlineChanged = (payload: RivalOnlineChangedPayload) => {
+      useRivalStore.getState().setOnline(payload.rivalOnline);
+    };
+
+    socket.on(ServerEvents.NEAR_MISS, onNearMiss);
+    socket.on(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
+    socket.on(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
+    socket.on(ServerEvents.MASHUP_VOTE_RESULT, onMashupVoteResult);
+    socket.on(ServerEvents.RIVAL_ONLINE_CHANGED, onRivalOnlineChanged);
+
     const onTournamentState = (payload: TournamentStatePayload) => {
       useTournamentStore.getState().applyTournamentState(payload.tournament);
     };
@@ -146,6 +196,11 @@ export function useSocket() {
       socket.off(ServerEvents.MOD_MUTED, onMuted);
       socket.off(ServerEvents.TOURNAMENT_STATE, onTournamentState);
       socket.off(ServerEvents.TOURNAMENT_COMPLETE, onTournamentComplete);
+      socket.off(ServerEvents.NEAR_MISS, onNearMiss);
+      socket.off(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
+      socket.off(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
+      socket.off(ServerEvents.MASHUP_VOTE_RESULT, onMashupVoteResult);
+      socket.off(ServerEvents.RIVAL_ONLINE_CHANGED, onRivalOnlineChanged);
     };
   }, [ensureConnected]);
 }

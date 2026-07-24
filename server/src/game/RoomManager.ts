@@ -1,9 +1,11 @@
 import type { Server, Socket } from "socket.io";
-import type { RoomVisibility, WordPack } from "@pixelpanic/shared";
+import { ServerEvents, type RoomVisibility, type WordPack } from "@pixelpanic/shared";
 import { RoomInstance } from "./RoomInstance.js";
 import { generateUniqueRoomCode } from "../rooms/roomCodes.js";
 import { getWordPack } from "../db/wordPacksRepo.js";
 import { DEFAULT_WORD_PACK_ID } from "../db/seedWords.js";
+import { getExistingRivalAnonId } from "../db/rivalsRepo.js";
+import { presenceTracker } from "./PresenceTracker.js";
 import { logger } from "../utils/logger.js";
 
 const EMPTY_ROOM_SWEEP_MS = 30_000;
@@ -37,7 +39,8 @@ export class RoomManager {
     visibility: RoomVisibility,
     hostSocket: Socket,
     hostName: string,
-    hostAnonId: string
+    hostAnonId: string,
+    hostAvatarId: string | null = null
   ): RoomInstance {
     const code = generateUniqueRoomCode((c) => this.rooms.has(c));
     const room = new RoomInstance(
@@ -47,11 +50,13 @@ export class RoomManager {
       hostSocket,
       hostName,
       hostAnonId,
-      this.resolveWordPack(null)
+      this.resolveWordPack(null),
+      hostAvatarId
     );
     this.rooms.set(code, room);
     hostSocket.data.roomId = code;
     hostSocket.data.anonId = hostAnonId;
+    this.markPresence(hostAnonId, hostSocket.id);
     logger.info(`Room ${code} created (${visibility}) by ${hostName}`);
     return room;
   }
@@ -60,16 +65,18 @@ export class RoomManager {
     roomId: string,
     socket: Socket,
     name: string,
-    anonId: string
+    anonId: string,
+    avatarId: string | null = null
   ): { ok: true; room: RoomInstance } | { ok: false; code: "ROOM_NOT_FOUND" | "ROOM_FULL" | "NAME_TAKEN" } {
     const room = this.rooms.get(roomId.toUpperCase());
     if (!room) return { ok: false, code: "ROOM_NOT_FOUND" };
 
-    const result = room.join(socket, name, anonId);
+    const result = room.join(socket, name, anonId, avatarId);
     if (!result.ok) return { ok: false, code: result.code };
 
     socket.data.roomId = room.room.id;
     socket.data.anonId = anonId;
+    this.markPresence(anonId, socket.id);
     return { ok: true, room };
   }
 
@@ -89,14 +96,39 @@ export class RoomManager {
 
   leaveSocket(socket: Socket): void {
     const room = this.getRoomBySocket(socket);
-    if (!room) return;
-    room.handleDisconnect(socket.id);
-    this.markPossiblyEmpty(room);
+    if (room) {
+      room.handleDisconnect(socket.id);
+      this.markPossiblyEmpty(room);
+    }
+    const anonId = socket.data.anonId as string | undefined;
+    if (anonId) this.markOffline(anonId);
   }
 
   resolveWordPack(customWordListId: string | null): WordPack {
     if (!customWordListId) return this.defaultPack;
     return getWordPack(customWordListId) ?? this.defaultPack;
+  }
+
+  // Phase 3 rival system: cross-room presence, used only to push
+  // RIVAL_ONLINE_CHANGED to a pairing that already exists — this never
+  // creates a pairing on its own (see getExistingRivalAnonId).
+  private markPresence(anonId: string, socketId: string): void {
+    presenceTracker.setOnline(anonId, socketId);
+    const rivalAnonId = getExistingRivalAnonId(anonId);
+    if (!rivalAnonId) return;
+    if (presenceTracker.isOnline(rivalAnonId)) {
+      const rivalSocketId = presenceTracker.socketIdFor(rivalAnonId);
+      if (rivalSocketId) this.io.to(rivalSocketId).emit(ServerEvents.RIVAL_ONLINE_CHANGED, { rivalOnline: true });
+      this.io.to(socketId).emit(ServerEvents.RIVAL_ONLINE_CHANGED, { rivalOnline: true });
+    }
+  }
+
+  private markOffline(anonId: string): void {
+    presenceTracker.setOffline(anonId);
+    const rivalAnonId = getExistingRivalAnonId(anonId);
+    if (!rivalAnonId) return;
+    const rivalSocketId = presenceTracker.socketIdFor(rivalAnonId);
+    if (rivalSocketId) this.io.to(rivalSocketId).emit(ServerEvents.RIVAL_ONLINE_CHANGED, { rivalOnline: false });
   }
 
   private markPossiblyEmpty(room: RoomInstance): void {

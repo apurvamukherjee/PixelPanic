@@ -9,6 +9,75 @@ export interface GameEndStatsInput {
   isWinner: boolean;
 }
 
+export interface AnonStatsRow {
+  anonId: string;
+  gamesPlayed: number;
+  roundsDrawn: number;
+  correctGuesses: number;
+  totalScore: number;
+  wins: number;
+}
+
+export function getAnonStats(anonId: string): AnonStatsRow | null {
+  const row = db
+    .prepare(
+      `SELECT anon_id, games_played, rounds_drawn, correct_guesses, total_score, wins
+       FROM anon_stats WHERE anon_id = ?`
+    )
+    .get(anonId) as
+    | {
+        anon_id: string;
+        games_played: number;
+        rounds_drawn: number;
+        correct_guesses: number;
+        total_score: number;
+        wins: number;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    anonId: row.anon_id,
+    gamesPlayed: row.games_played,
+    roundsDrawn: row.rounds_drawn,
+    correctGuesses: row.correct_guesses,
+    totalScore: row.total_score,
+    wins: row.wins,
+  };
+}
+
+// Every anon_stats row not backing a live player (i.e. everyone who's ever
+// played a game) — used by the rival auto-pairing matcher.
+export function listAllAnonStats(): AnonStatsRow[] {
+  const rows = db
+    .prepare(
+      `SELECT anon_id, games_played, rounds_drawn, correct_guesses, total_score, wins
+       FROM anon_stats WHERE games_played > 0`
+    )
+    .all() as {
+    anon_id: string;
+    games_played: number;
+    rounds_drawn: number;
+    correct_guesses: number;
+    total_score: number;
+    wins: number;
+  }[];
+  return rows.map((row) => ({
+    anonId: row.anon_id,
+    gamesPlayed: row.games_played,
+    roundsDrawn: row.rounds_drawn,
+    correctGuesses: row.correct_guesses,
+    totalScore: row.total_score,
+    wins: row.wins,
+  }));
+}
+
+export function getDisplayName(anonId: string): string | null {
+  const row = db.prepare(`SELECT display_name FROM anon_players WHERE anon_id = ?`).get(anonId) as
+    | { display_name: string | null }
+    | undefined;
+  return row?.display_name ?? null;
+}
+
 function ensureAnonPlayer(anonId: string, displayName: string): void {
   const now = Date.now();
   db.prepare(

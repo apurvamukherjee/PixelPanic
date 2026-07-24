@@ -26,7 +26,8 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
       payload.visibility,
       socket,
       sanitizeName(payload.hostName),
-      payload.anonId
+      payload.anonId,
+      payload.avatarId ?? null
     );
     room.broadcastRoomState();
   });
@@ -36,7 +37,8 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
       payload.roomId,
       socket,
       sanitizeName(payload.name),
-      payload.anonId
+      payload.anonId,
+      payload.avatarId ?? null
     );
     if (!result.ok) {
       emitError(socket, {
@@ -55,7 +57,8 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
         existing.room.id,
         socket,
         sanitizeName(payload.name),
-        payload.anonId
+        payload.anonId,
+        payload.avatarId ?? null
       );
       if (result.ok) {
         result.room.broadcastRoomState();
@@ -66,7 +69,8 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
       "public",
       socket,
       sanitizeName(payload.name),
-      payload.anonId
+      payload.anonId,
+      payload.avatarId ?? null
     );
     room.broadcastRoomState();
   });

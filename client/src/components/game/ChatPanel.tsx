@@ -82,6 +82,19 @@ export function ChatPanel() {
               </div>
             );
           }
+          if (m.kind === "nearMiss") {
+            return (
+              <div
+                key={m.id}
+                className="near-miss flex items-center gap-3 rounded-xl border border-tertiary/40 bg-tertiary/20 p-2.5"
+              >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-tertiary text-on-tertiary">
+                  <Icon name="bolt" className="!text-sm" />
+                </div>
+                <span className="text-xs text-tertiary">{m.text}</span>
+              </div>
+            );
+          }
           return (
             <div key={m.id} className="rounded-lg border border-white/5 bg-white/5 p-2">
               <span className="font-bold text-secondary">{m.playerName}: </span>

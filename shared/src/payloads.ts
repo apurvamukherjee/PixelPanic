@@ -1,23 +1,27 @@
-import type { RoomVisibility, Room, RoomMode, Team } from "./room.js";
+import type { RoomVisibility, Room, RoomMode, Team, ChaosModes } from "./room.js";
 import type { TurnState } from "./game.js";
 import type { ChatChannel } from "./chat.js";
 import type { TournamentState } from "./tournament.js";
+import type { RivalSummary } from "./rival.js";
 
 export interface RoomCreatePayload {
   visibility: RoomVisibility;
   hostName: string;
   anonId: string;
+  avatarId?: string | null;
 }
 
 export interface RoomJoinPayload {
   roomId: string;
   name: string;
   anonId: string;
+  avatarId?: string | null;
 }
 
 export interface RoomQuickMatchPayload {
   name: string;
   anonId: string;
+  avatarId?: string | null;
 }
 
 export type RoomErrorCode =
@@ -42,6 +46,7 @@ export interface RoomUpdateSettingsPayload {
   hintFrequency?: "off" | "slow" | "normal" | "fast";
   customWordListId?: string | null;
   mode?: RoomMode;
+  chaosModes?: Partial<ChaosModes>;
 }
 
 export interface RoomSetTeamsPayload {
@@ -85,17 +90,24 @@ export interface GuessCorrectPayload {
 export interface ScoreUpdatePayload {
   scoreboard: Record<string, number>;
   teamScoreboard?: Record<string, number>; // teamId -> avg member score, team mode only
+  momentum?: Record<string, number>; // anonId -> streak, only when chaosModes.momentum is on
 }
 
 export interface RoundEndPayload {
   word: string;
   scoreboardDelta: Record<string, number>;
   teamScoreboard?: Record<string, number>;
+  isMashupRound?: boolean;
+  mashupVoteOpen?: boolean;
+  mashupCandidates?: { playerId: string; playerName: string }[];
 }
 
 export interface GameEndPayload {
   finalScoreboard: { playerId: string; name: string; score: number }[];
   teamScoreboard?: Record<string, number>;
+  // Phase 3 — anonId -> title ids unlocked this game, folded onto the
+  // existing GAME_END event rather than a new one.
+  unlockedTitles?: Record<string, string[]>;
 }
 
 export interface VotekickPayload {
@@ -150,4 +162,47 @@ export interface TournamentMatchStartPayload {
 
 export interface TournamentCompletePayload {
   tournament: TournamentState;
+}
+
+// ---- Phase 3: chaos modes ----
+
+export interface NearMissPayload {
+  guess: string;
+  hint: "one letter off" | "close";
+}
+
+export type SabotagePowerup = "blur" | "swapGuesses" | "freezePalette";
+
+export interface SabotagePowerupGrantedPayload {
+  powerup: SabotagePowerup;
+}
+
+export interface SabotageUsePowerupPayload {
+  powerup: SabotagePowerup;
+  targetPlayerId: string;
+}
+
+export interface SabotageEffectAppliedPayload {
+  effect: SabotagePowerup;
+  durationMs: number;
+  partnerId?: string; // swapGuesses only — who the target's guesses are routed to/from
+}
+
+export interface MashupVotePayload {
+  targetPlayerId: string;
+}
+
+export interface MashupVoteResultPayload {
+  winnerId: string | null;
+  bonusAwarded: number;
+}
+
+// ---- Phase 3: rival system (REST, not sockets — see /api/rivals) ----
+
+export interface RivalStatePayload {
+  rival: RivalSummary | null;
+}
+
+export interface RivalOnlineChangedPayload {
+  rivalOnline: boolean;
 }

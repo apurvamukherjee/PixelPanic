@@ -3,19 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { ClientEvents } from "@pixelpanic/shared";
 import { useConnectionStore } from "../store/useConnectionStore";
 import { useRoomStore } from "../store/useRoomStore";
-import { getAnonId, getSavedName, saveName } from "../lib/anonId";
+import { getAnonId, getSavedName, saveName, getSavedAvatarId, saveAvatarId } from "../lib/anonId";
 import { Button } from "../components/shared/Button";
+import { AvatarPicker } from "../components/shared/AvatarPicker";
+import { FeatureGuide } from "../components/shared/FeatureGuide";
 
 export function HomePage() {
   const navigate = useNavigate();
   const ensureConnected = useConnectionStore((s) => s.ensureConnected);
   const room = useRoomStore((s) => s.room);
   const [name, setName] = useState(getSavedName());
+  const [avatarId, setAvatarId] = useState<string | null>(getSavedAvatarId());
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (pending && room) navigate(`/room/${room.id}`);
   }, [pending, room, navigate]);
+
+  const chooseAvatar = (id: string) => {
+    setAvatarId(id);
+    saveAvatarId(id);
+  };
 
   const withName = (fn: () => void) => {
     const trimmed = name.trim();
@@ -29,7 +37,7 @@ export function HomePage() {
   const quickMatch = () =>
     withName(() => {
       const socket = useConnectionStore.getState().socket;
-      socket?.emit(ClientEvents.ROOM_QUICK_MATCH, { name: name.trim(), anonId: getAnonId() });
+      socket?.emit(ClientEvents.ROOM_QUICK_MATCH, { name: name.trim(), anonId: getAnonId(), avatarId });
     });
 
   const createPrivate = () =>
@@ -39,6 +47,7 @@ export function HomePage() {
         visibility: "private",
         hostName: name.trim(),
         anonId: getAnonId(),
+        avatarId,
       });
     });
 
@@ -56,6 +65,8 @@ export function HomePage() {
             Doodle. Guess. <span className="text-secondary">Dominate.</span>
           </p>
         </div>
+
+        <AvatarPicker avatarId={avatarId} onChange={chooseAvatar} name={name} />
 
         <input
           className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-center font-body text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary"
@@ -75,6 +86,7 @@ export function HomePage() {
           <Button variant="ghost" onClick={() => navigate("/wordpacks")}>
             My Word Packs
           </Button>
+          <FeatureGuide />
         </div>
       </div>
     </div>
