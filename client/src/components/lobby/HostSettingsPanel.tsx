@@ -149,13 +149,28 @@ export function HostSettingsPanel() {
           onChange={(e) => update({ customWordListId: e.target.value || null })}
         >
           <option value="">Classic Mix (default)</option>
-          {packs
-            .filter((p) => !p.isBuiltIn)
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+          {packs.filter((p) => p.isBuiltIn && p.id !== "default").length > 0 && (
+            <optgroup label="Built-in packs">
+              {packs
+                .filter((p) => p.isBuiltIn && p.id !== "default")
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </optgroup>
+          )}
+          {packs.filter((p) => !p.isBuiltIn).length > 0 && (
+            <optgroup label="Custom lists">
+              {packs
+                .filter((p) => !p.isBuiltIn)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </optgroup>
+          )}
         </select>
       </label>
 

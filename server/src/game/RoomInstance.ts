@@ -28,6 +28,7 @@ import {
   type TournamentState,
   type NearMissPayload,
   type NearMissPulsePayload,
+  type WrongGuessPayload,
   type SabotagePowerup,
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
@@ -1017,6 +1018,10 @@ export class RoomInstance implements TournamentHost {
             playerId: player.id,
           } satisfies NearMissPulsePayload);
         }
+      } else {
+        this.emitTo(player.id, ServerEvents.WRONG_GUESS, {
+          guess: trimmed,
+        } satisfies WrongGuessPayload);
       }
     }
 

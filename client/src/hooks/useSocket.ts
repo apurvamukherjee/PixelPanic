@@ -19,6 +19,7 @@ import {
   type TournamentCompletePayload,
   type NearMissPayload,
   type NearMissPulsePayload,
+  type WrongGuessPayload,
   type SabotagePowerupGrantedPayload,
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
@@ -34,6 +35,7 @@ import { useTournamentStore } from "../store/useTournamentStore";
 import { useChaosStore } from "../store/useChaosStore";
 import { useRivalStore } from "../store/useRivalStore";
 import { useFeedbackStore } from "../store/useFeedbackStore";
+import { useAudioStore } from "../store/useAudioStore";
 
 // Wires every non-drawing server event into the relevant store. Drawing
 // events are subscribed to directly inside DrawingCanvas (imperative canvas
@@ -76,6 +78,7 @@ export function useSocket() {
     const onGuessCorrect = (payload: GuessCorrectPayload) => {
       useGameStore.getState().markGuessedCorrectly();
       useFeedbackStore.getState().triggerCorrectGuess(payload.pointsAwarded);
+      useAudioStore.getState().playCorrect();
       useChatStore.getState().addMessage({
         id: crypto.randomUUID(),
         playerId: "system",
@@ -92,6 +95,7 @@ export function useSocket() {
     };
     const onRoundEnd = (payload: RoundEndPayload) => {
       useGameStore.getState().applyRoundEnd(payload);
+      useAudioStore.getState().playRoundEnd();
     };
     const onGameEnd = (payload: GameEndPayload) => {
       useGameStore.getState().applyGameEnd(payload);
@@ -140,6 +144,7 @@ export function useSocket() {
     socket.on(ServerEvents.MOD_MUTED, onMuted);
 
     const onNearMiss = (payload: NearMissPayload) => {
+      useAudioStore.getState().playNearMiss();
       useChatStore.getState().addMessage({
         id: crypto.randomUUID(),
         playerId: "system",
@@ -150,6 +155,9 @@ export function useSocket() {
         channel: "room",
         teamId: null,
       });
+    };
+    const onWrongGuess = (_payload: WrongGuessPayload) => {
+      useAudioStore.getState().playWrong();
     };
     const onSabotageGranted = (payload: SabotagePowerupGrantedPayload) => {
       useChaosStore.getState().setPendingPowerup(payload.powerup);
@@ -181,6 +189,7 @@ export function useSocket() {
     };
 
     socket.on(ServerEvents.NEAR_MISS, onNearMiss);
+    socket.on(ServerEvents.WRONG_GUESS, onWrongGuess);
     socket.on(ServerEvents.NEAR_MISS_PULSE, onNearMissPulse);
     socket.on(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
     socket.on(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
@@ -215,6 +224,7 @@ export function useSocket() {
       socket.off(ServerEvents.TOURNAMENT_STATE, onTournamentState);
       socket.off(ServerEvents.TOURNAMENT_COMPLETE, onTournamentComplete);
       socket.off(ServerEvents.NEAR_MISS, onNearMiss);
+      socket.off(ServerEvents.WRONG_GUESS, onWrongGuess);
       socket.off(ServerEvents.NEAR_MISS_PULSE, onNearMissPulse);
       socket.off(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
       socket.off(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);

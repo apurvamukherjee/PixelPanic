@@ -190,6 +190,12 @@ export interface NearMissPulsePayload {
   playerId: string;
 }
 
+// Private "no match" signal for the guesser's own client — lets it play a
+// funny miss sound without every player's ordinary chat also triggering one.
+export interface WrongGuessPayload {
+  guess: string;
+}
+
 export type SabotagePowerup = "blur" | "swapGuesses" | "freezePalette";
 
 export interface SabotagePowerupGrantedPayload {

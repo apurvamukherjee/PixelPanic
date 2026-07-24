@@ -6,6 +6,7 @@ import { useRivalStore } from "../../store/useRivalStore";
 import { useRoomStore } from "../../store/useRoomStore";
 import { useConnectionStore } from "../../store/useConnectionStore";
 import { resetRoomScopedState } from "../../lib/resetRoomState";
+import { useAudioStore } from "../../store/useAudioStore";
 import { Icon } from "./Icon";
 
 // Persistent chrome mounted once at the app root (outside the phase-
@@ -19,6 +20,10 @@ export function AppHeader() {
   const room = useRoomStore((s) => s.room);
   const socket = useConnectionStore((s) => s.socket);
   const navigate = useNavigate();
+  const sfxOn = useAudioStore((s) => s.sfxOn);
+  const musicOn = useAudioStore((s) => s.musicOn);
+  const toggleMuted = useAudioStore((s) => s.toggleMuted);
+  const muted = !sfxOn && !musicOn;
 
   useEffect(() => {
     load(getAnonId());
@@ -42,6 +47,13 @@ export function AppHeader() {
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
+        <button
+          title={muted ? "Unmute sound" : "Mute sound"}
+          onClick={toggleMuted}
+          className="glass flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-secondary"
+        >
+          <Icon name={muted ? "volume_off" : "volume_up"} className="!text-base" />
+        </button>
         {room && (
           <button
             title="Leave room"

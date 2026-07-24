@@ -61,6 +61,10 @@ export const ServerEvents = {
   // Drawer-only "someone's close" signal — no guess text, just a pulse so
   // the drawer can feel the room without a guesser's private hint leaking.
   NEAR_MISS_PULSE: "chaos:nearMissPulse",
+  // Private "that guess didn't match" signal, sent only to the guesser —
+  // lets the client play a funny miss sound without turning every ordinary
+  // chat message into a false positive.
+  WRONG_GUESS: "guess:wrong",
   SABOTAGE_POWERUP_GRANTED: "sabotage:powerupGranted",
   SABOTAGE_EFFECT_APPLIED: "sabotage:effectApplied",
   MASHUP_VOTE_RESULT: "mashup:voteResult",

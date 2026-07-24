@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { db } from "./connection.js";
-import { DEFAULT_WORD_PACK_ID, DEFAULT_WORD_PACK_NAME, DEFAULT_WORDS } from "./seedWords.js";
+import { BUILT_IN_WORD_PACKS } from "./seedWords.js";
 import { logger } from "../utils/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -11,7 +11,7 @@ export function migrate(): void {
   const schemaSql = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf-8");
   db.exec(schemaSql);
   addColumnsForPhase2();
-  seedDefaultWordPackIfEmpty();
+  seedBuiltInWordPacksIfEmpty();
 }
 
 // ALTER TABLE ADD COLUMN isn't naturally idempotent (no IF NOT EXISTS in
@@ -30,12 +30,12 @@ function ensureColumn(table: string, column: string, ddl: string): void {
   logger.info(`Migrated: added ${table}.${column}`);
 }
 
-function seedDefaultWordPackIfEmpty(): void {
-  const existing = db
-    .prepare("SELECT id FROM word_packs WHERE id = ?")
-    .get(DEFAULT_WORD_PACK_ID);
-  if (existing) return;
-
+// Checked per-pack (not "does word_packs have any rows") so adding a new
+// built-in pack to BUILT_IN_WORD_PACKS auto-seeds just that pack on an
+// existing deployed DB, without touching packs already seeded or any
+// host-submitted custom packs.
+function seedBuiltInWordPacksIfEmpty(): void {
+  const existsStmt = db.prepare("SELECT id FROM word_packs WHERE id = ?");
   const insertPack = db.prepare(
     "INSERT INTO word_packs (id, name, is_built_in, created_at) VALUES (?, ?, 1, ?)"
   );
@@ -43,13 +43,13 @@ function seedDefaultWordPackIfEmpty(): void {
     "INSERT INTO word_pack_words (pack_id, word) VALUES (?, ?)"
   );
 
-  const seed = db.transaction(() => {
-    insertPack.run(DEFAULT_WORD_PACK_ID, DEFAULT_WORD_PACK_NAME, Date.now());
-    for (const word of DEFAULT_WORDS) {
-      insertWord.run(DEFAULT_WORD_PACK_ID, word);
-    }
-  });
-  seed();
-
-  logger.info(`Seeded default word pack with ${DEFAULT_WORDS.length} words`);
+  for (const pack of BUILT_IN_WORD_PACKS) {
+    if (existsStmt.get(pack.id)) continue;
+    const seed = db.transaction(() => {
+      insertPack.run(pack.id, pack.name, Date.now());
+      for (const word of pack.words) insertWord.run(pack.id, word);
+    });
+    seed();
+    logger.info(`Seeded built-in word pack "${pack.name}" with ${pack.words.length} words`);
+  }
 }

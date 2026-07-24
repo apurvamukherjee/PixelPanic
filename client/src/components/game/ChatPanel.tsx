@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChatChannel } from "@pixelpanic/shared";
+import { ClientEvents, type ChatChannel } from "@pixelpanic/shared";
 import { useChatStore } from "../../store/useChatStore";
 import { useGameStore } from "../../store/useGameStore";
 import { useRoomStore } from "../../store/useRoomStore";
+import { useConnectionStore } from "../../store/useConnectionStore";
 import { Icon } from "../shared/Icon";
+
+// Secret vote-kick command — replaces the old visible "block" button on
+// PlayerList so casting a kick vote doesn't tip off the target. Typed into
+// chat like a normal message but never sent to the server as chat: it's
+// intercepted client-side, so nobody else's feed ever sees it.
+const KICK_COMMAND = /^kickhim\s+(.+)$/i;
 
 export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
@@ -12,6 +19,7 @@ export function ChatPanel() {
   const mySocketId = useRoomStore((s) => s.mySocketId);
   const room = useRoomStore((s) => s.room);
   const myTeamId = useRoomStore((s) => s.myTeamId);
+  const socket = useConnectionStore((s) => s.socket);
   const isDrawer = drawerId !== null && drawerId === mySocketId;
   const isTeamMode = room?.settings.mode === "team" && myTeamId !== null;
   const [channel, setChannel] = useState<ChatChannel>("room");
@@ -57,7 +65,33 @@ export function ChatPanel() {
   };
 
   const submit = () => {
-    if (!text.trim()) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    const kickMatch = trimmed.match(KICK_COMMAND);
+    if (kickMatch) {
+      const targetName = kickMatch[1]!.trim().toLowerCase();
+      const players = room?.players ?? [];
+      const target =
+        players.find((p) => p.id !== mySocketId && p.name.toLowerCase() === targetName) ??
+        players.find((p) => p.id !== mySocketId && p.name.toLowerCase().startsWith(targetName));
+      if (target) {
+        socket?.emit(ClientEvents.MOD_VOTEKICK, { targetPlayerId: target.id });
+        useChatStore.getState().addMessage({
+          id: crypto.randomUUID(),
+          playerId: "system",
+          playerName: "System",
+          text: `Kick vote cast against ${target.name} (only you can see this).`,
+          ts: Date.now(),
+          kind: "system",
+          channel: "room",
+          teamId: null,
+        });
+      }
+      setText("");
+      return;
+    }
+
     sendGuess(text, activeChannel);
     setText("");
   };

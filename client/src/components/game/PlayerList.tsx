@@ -108,13 +108,6 @@ function PlayerRow({
               <Icon name="bolt" className="!text-sm" />
             </button>
           )}
-          <button
-            title="Vote kick"
-            className="flex h-6 w-6 items-center justify-center rounded text-on-surface-variant hover:text-error"
-            onClick={() => socket?.emit(ClientEvents.MOD_VOTEKICK, { targetPlayerId: p.id })}
-          >
-            <Icon name="block" className="!text-sm" />
-          </button>
           {isHost && (
             <button
               title="Mute"
