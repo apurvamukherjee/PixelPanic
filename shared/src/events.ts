@@ -31,6 +31,9 @@ export const ServerEvents = {
   ROOM_STATE: "room:state",
   ROOM_ERROR: "room:error",
   GAME_PHASE_CHANGE: "game:phaseChange",
+  // The host left (voluntarily, or their reconnect grace period expired)
+  // and the room is closing — everyone still connected gets kicked back out.
+  ROOM_CLOSED: "room:closed",
   WORD_CHOICES: "word:choices",
   TURN_START: "turn:start",
   TIMER_TICK: "timer:tick",

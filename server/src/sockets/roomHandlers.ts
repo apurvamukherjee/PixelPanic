@@ -76,7 +76,7 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
   });
 
   socket.on(ClientEvents.ROOM_LEAVE, () => {
-    roomManager.leaveSocket(socket);
+    roomManager.leaveRoomVoluntarily(socket);
   });
 
   socket.on(ClientEvents.ROOM_UPDATE_SETTINGS, (payload: RoomUpdateSettingsPayload) => {

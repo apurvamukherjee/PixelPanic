@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ClientEvents } from "@pixelpanic/shared";
 import { getAnonId } from "../../lib/anonId";
 import { useRivalStore } from "../../store/useRivalStore";
+import { useRoomStore } from "../../store/useRoomStore";
+import { useConnectionStore } from "../../store/useConnectionStore";
+import { resetRoomScopedState } from "../../lib/resetRoomState";
 import { Icon } from "./Icon";
 
 // Persistent chrome mounted once at the app root (outside the phase-
@@ -11,10 +16,22 @@ export function AppHeader() {
   const loaded = useRivalStore((s) => s.loaded);
   const load = useRivalStore((s) => s.load);
   const [panelOpen, setPanelOpen] = useState(false);
+  const room = useRoomStore((s) => s.room);
+  const socket = useConnectionStore((s) => s.socket);
+  const navigate = useNavigate();
 
   useEffect(() => {
     load(getAnonId());
   }, [load]);
+
+  // Always-accessible way out of a room — previously the only options were
+  // closing the tab (leaves a ghost player behind, see RoomManager) or
+  // creating another room without ever leaving this one (same bleed bug).
+  const leaveRoom = () => {
+    socket?.emit(ClientEvents.ROOM_LEAVE);
+    resetRoomScopedState();
+    navigate("/");
+  };
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-start justify-between p-3">
@@ -25,6 +42,15 @@ export function AppHeader() {
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
+        {room && (
+          <button
+            title="Leave room"
+            onClick={leaveRoom}
+            className="glass flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-error"
+          >
+            <Icon name="logout" className="!text-base" />
+          </button>
+        )}
         <button
           title={rival ? `Rival: ${rival.rivalName}` : "Your rival"}
           onClick={() => setPanelOpen((v) => !v)}

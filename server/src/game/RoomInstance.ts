@@ -38,6 +38,7 @@ import {
   type CommittedStrokeOp,
   type CommittedDrawOp,
   type DrawSnapshotPayload,
+  type RoomClosedPayload,
 } from "@pixelpanic/shared";
 import { WordSelector } from "./WordSelector.js";
 import { computeHintSchedule, buildMaskedWord } from "./HintScheduler.js";
@@ -161,10 +162,16 @@ export class RoomInstance implements TournamentHost {
     const existing = this.room.players.find((p) => p.anonId === anonId);
     if (existing) {
       const wasDisconnected = !existing.connected;
+      const wasHost = existing.isHost;
       existing.id = socket.id;
       existing.connected = true;
       existing.name = name;
       existing.avatarId = avatarId;
+      // room.hostId pins a *socket id*, which just changed — a host who
+      // reconnects within the grace period (handleDisconnect deliberately
+      // leaves their isHost/hostId alone, see there) needs it repointed at
+      // their new socket, or every host-only check keys off a dead id.
+      if (wasHost) this.room.hostId = existing.id;
       this.cancelGraceTimer(anonId);
       socket.join(this.room.id);
       if (existing.teamId) socket.join(this.teamRoomKey(existing.teamId));
@@ -244,9 +251,11 @@ export class RoomInstance implements TournamentHost {
     player.connected = false;
     this.pushSystemChat(`${player.name} disconnected.`);
 
-    if (this.room.hostId === player.id) {
-      this.transferHost();
-    }
+    // Host status deliberately stays put through the grace period — a brief
+    // network blip shouldn't cost the host their room, and it lets them
+    // resume seamlessly as host if they reconnect within RECONNECT_GRACE_MS
+    // (see join()). If they don't come back, removePlayerPermanently() below
+    // closes the room instead of handing it to someone else.
     if (this.game.turn?.phase === "drawing" && this.game.turn.drawerId === player.id) {
       this.endTurn();
     }
@@ -271,6 +280,10 @@ export class RoomInstance implements TournamentHost {
     if (idx === -1) return;
     const [player] = this.room.players.splice(idx, 1);
     delete this.game.scoreboard[player!.id];
+    if (player!.isHost) {
+      this.closeRoom(`${player!.name} (the host) left — this room has closed.`);
+      return;
+    }
     this.pushSystemChat(`${player!.name} left the room.`);
     this.broadcastRoomState();
   }
@@ -282,6 +295,57 @@ export class RoomInstance implements TournamentHost {
       nextHost.isHost = true;
       this.room.hostId = nextHost.id;
     }
+  }
+
+  // Voluntary leave (ROOM_LEAVE, or a socket switching straight to another
+  // room — see RoomManager.leaveSocket/joinRoom/createRoom) — unlike a
+  // network disconnect, there's no grace period: the player is gone now.
+  leave(socketId: string): void {
+    const idx = this.room.players.findIndex((p) => p.id === socketId);
+    if (idx === -1) return;
+    const player = this.room.players.splice(idx, 1)[0]!;
+    this.cancelGraceTimer(player.anonId);
+    delete this.game.scoreboard[player.id];
+
+    const socket = this.io.sockets.sockets.get(socketId);
+    socket?.leave(this.room.id);
+    if (player.teamId) socket?.leave(this.teamRoomKey(player.teamId));
+
+    if (this.game.turn?.phase === "drawing" && this.game.turn.drawerId === player.id) {
+      this.endTurn();
+    }
+
+    if (player.isHost) {
+      this.closeRoom(`${player.name} (the host) left — this room has closed.`);
+      return;
+    }
+    this.pushSystemChat(`${player.name} left the room.`);
+    this.broadcastRoomState();
+  }
+
+  // Kicks every remaining connected player out and tears the room down —
+  // called whenever the host is gone for good (leave() or an expired
+  // reconnect grace period), never for a routine votekick (forceKick keeps
+  // the room alive and transfers host instead, a deliberately different case).
+  private closeRoom(reason: string): void {
+    this.broadcast(ServerEvents.ROOM_CLOSED, { reason } satisfies RoomClosedPayload);
+    for (const p of this.room.players) {
+      const socket = this.io.sockets.sockets.get(p.id);
+      socket?.leave(this.room.id);
+      if (p.teamId) socket?.leave(this.teamRoomKey(p.teamId));
+    }
+    this.room.players = [];
+    this.dispose();
+    this.onClosedCallback?.();
+  }
+
+  private onClosedCallback: (() => void) | null = null;
+  // RoomManager wires this up right after construction so a closed room is
+  // dropped from its Map immediately, instead of waiting on the periodic
+  // empty-room sweep (which a closeRoom()'d room would pass anyway, since
+  // isEmpty() checks `connected`, not "does this room still have anyone").
+  setOnClosed(cb: () => void): void {
+    this.onClosedCallback = cb;
   }
 
   isEmpty(): boolean {

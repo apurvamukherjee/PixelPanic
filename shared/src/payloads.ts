@@ -36,6 +36,10 @@ export interface RoomErrorPayload {
   message: string;
 }
 
+export interface RoomClosedPayload {
+  reason: string;
+}
+
 export interface RoomStatePayload {
   room: Room;
 }

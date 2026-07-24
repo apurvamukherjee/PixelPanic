@@ -42,6 +42,7 @@ export class RoomManager {
     hostAnonId: string,
     hostAvatarId: string | null = null
   ): RoomInstance {
+    this.leaveCurrentRoomIfAny(hostSocket);
     const code = generateUniqueRoomCode((c) => this.rooms.has(c));
     const room = new RoomInstance(
       this.io,
@@ -53,6 +54,10 @@ export class RoomManager {
       this.resolveWordPack(null),
       hostAvatarId
     );
+    room.setOnClosed(() => {
+      this.rooms.delete(code);
+      this.emptySince.delete(code);
+    });
     this.rooms.set(code, room);
     hostSocket.data.roomId = code;
     hostSocket.data.anonId = hostAnonId;
@@ -71,6 +76,12 @@ export class RoomManager {
     const room = this.rooms.get(roomId.toUpperCase());
     if (!room) return { ok: false, code: "ROOM_NOT_FOUND" };
 
+    // Reconnecting into the SAME room (the common case — anonId already a
+    // member) must not trip the "leave your old room first" path below, or
+    // every grace-period reconnect would evict itself before rejoining.
+    const alreadyThere = room.room.players.some((p) => p.anonId === anonId);
+    if (!alreadyThere) this.leaveCurrentRoomIfAny(socket);
+
     const result = room.join(socket, name, anonId, avatarId);
     if (!result.ok) return { ok: false, code: result.code };
 
@@ -78,6 +89,22 @@ export class RoomManager {
     socket.data.anonId = anonId;
     this.markPresence(anonId, socket.id);
     return { ok: true, room };
+  }
+
+  // A socket that creates or joins a new room while still marked as a
+  // member of a previous one (no explicit ROOM_LEAVE — e.g. the user just
+  // clicked "Create Private Room" again from Home) would otherwise stay
+  // subscribed to the old room's Socket.IO broadcast channel *and* leave a
+  // permanently-connected ghost player behind there, blocking that old room
+  // from ever being cleaned up. Route it through the same voluntary-leave
+  // path a real ROOM_LEAVE takes.
+  private leaveCurrentRoomIfAny(socket: Socket): void {
+    const previousRoomId = socket.data.roomId as string | undefined;
+    if (!previousRoomId) return;
+    const previousRoom = this.rooms.get(previousRoomId);
+    if (!previousRoom) return;
+    previousRoom.leave(socket.id);
+    this.markPossiblyEmpty(previousRoom);
   }
 
   findQuickMatchRoom(): RoomInstance | undefined {
@@ -94,12 +121,28 @@ export class RoomManager {
     return undefined;
   }
 
+  // Real transport disconnect (tab closed, network dropped) — starts the
+  // reconnect grace period rather than removing the player outright.
   leaveSocket(socket: Socket): void {
     const room = this.getRoomBySocket(socket);
     if (room) {
       room.handleDisconnect(socket.id);
       this.markPossiblyEmpty(room);
     }
+    const anonId = socket.data.anonId as string | undefined;
+    if (anonId) this.markOffline(anonId);
+  }
+
+  // Explicit ROOM_LEAVE — the player is choosing to leave right now, so
+  // there's no grace period: removed immediately, socket detached from the
+  // room's Socket.IO channel so it's free to create/join a different room.
+  leaveRoomVoluntarily(socket: Socket): void {
+    const room = this.getRoomBySocket(socket);
+    if (room) {
+      room.leave(socket.id);
+      this.markPossiblyEmpty(room);
+    }
+    socket.data.roomId = undefined;
     const anonId = socket.data.anonId as string | undefined;
     if (anonId) this.markOffline(anonId);
   }

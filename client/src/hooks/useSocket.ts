@@ -23,7 +23,9 @@ import {
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
   type RivalOnlineChangedPayload,
+  type RoomClosedPayload,
 } from "@pixelpanic/shared";
+import { resetRoomScopedState } from "../lib/resetRoomState";
 import { useConnectionStore } from "../store/useConnectionStore";
 import { useRoomStore } from "../store/useRoomStore";
 import { useGameStore } from "../store/useGameStore";
@@ -47,6 +49,11 @@ export function useSocket() {
     };
     const onRoomError = (error: RoomErrorPayload) => {
       useRoomStore.getState().setError(error);
+    };
+    const onRoomClosed = (payload: RoomClosedPayload) => {
+      const reason = payload.reason;
+      resetRoomScopedState();
+      useRoomStore.getState().setClosedReason(reason);
     };
     const onPhaseChange = (payload: GamePhaseChangePayload) => {
       useGameStore.getState().applyPhaseChange(payload.phase);
@@ -118,6 +125,7 @@ export function useSocket() {
 
     socket.on(ServerEvents.ROOM_STATE, onRoomState);
     socket.on(ServerEvents.ROOM_ERROR, onRoomError);
+    socket.on(ServerEvents.ROOM_CLOSED, onRoomClosed);
     socket.on(ServerEvents.GAME_PHASE_CHANGE, onPhaseChange);
     socket.on(ServerEvents.WORD_CHOICES, onWordChoices);
     socket.on(ServerEvents.TURN_START, onTurnStart);
@@ -191,6 +199,7 @@ export function useSocket() {
     return () => {
       socket.off(ServerEvents.ROOM_STATE, onRoomState);
       socket.off(ServerEvents.ROOM_ERROR, onRoomError);
+      socket.off(ServerEvents.ROOM_CLOSED, onRoomClosed);
       socket.off(ServerEvents.GAME_PHASE_CHANGE, onPhaseChange);
       socket.off(ServerEvents.WORD_CHOICES, onWordChoices);
       socket.off(ServerEvents.TURN_START, onTurnStart);

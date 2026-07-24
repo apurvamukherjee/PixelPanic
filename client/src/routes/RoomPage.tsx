@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ClientEvents } from "@pixelpanic/shared";
 import { useRoomFromUrl } from "../hooks/useRoomFromUrl";
 import { useRoomStore } from "../store/useRoomStore";
@@ -18,10 +19,18 @@ export function RoomPage() {
   const code = useRoomFromUrl();
   const room = useRoomStore((s) => s.room);
   const isHost = useRoomStore((s) => s.isHost);
+  const closedReason = useRoomStore((s) => s.closedReason);
   const phase = useGameStore((s) => s.phase);
   const tournament = useTournamentStore((s) => s.tournament);
   const socket = useConnectionStore((s) => s.socket);
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
+
+  // ROOM_CLOSED (useSocket.ts) already cleared `room` by the time this
+  // fires — HomePage is what actually shows closedReason, once, then clears it.
+  useEffect(() => {
+    if (closedReason) navigate("/");
+  }, [closedReason, navigate]);
 
   if (!code) return null;
 

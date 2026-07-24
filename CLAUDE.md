@@ -182,9 +182,23 @@ Documented inline as comments in `RoomInstance.ts`, summarized here:
 - **Quick-match:** first public lobby-phase room with a free slot, else
   create a new one — no skill/ELO matching.
 - **Disconnects:** drawer disconnect → turn ends immediately; guesser
-  disconnect → no special handling; host disconnect → host transfers
-  immediately to the next connected player. 20s reconnect grace period
-  matched by `anonId`, but a disconnected drawer's turn is not resumed.
+  disconnect → no special handling. 20s reconnect grace period matched by
+  `anonId`, but a disconnected drawer's turn is not resumed. **Host
+  disconnect/leave no longer transfers host** (revised after Phase 3): a
+  disconnected host keeps their `isHost`/`room.hostId` through the full 20s
+  grace window (repointed at their new socket id on reconnect, see `join()`)
+  so a brief blip doesn't cost them the room; if the grace period expires
+  without them coming back, or they leave voluntarily (`RoomInstance.leave`,
+  wired to `ROOM_LEAVE` and to `AppHeader`'s "Leave room" button), the room
+  closes outright (`closeRoom()` → `ROOM_CLOSED` to everyone still in it)
+  instead of handing it to another player — `forceKick`'s votekick path is
+  the one deliberate exception, still transferring host, since there the
+  room is meant to keep going. `RoomManager.createRoom`/`joinRoom` also
+  defensively run a socket through the same voluntary-leave path if it's
+  still marked as a member of a *previous* room (e.g. browser back-button
+  from an active room straight into "Create another room," with no explicit
+  leave) — without that, the old room was left with a permanently-connected
+  ghost player and never got garbage-collected.
 - **Room codes:** 6-char Crockford base32, collision-checked against the
   live `RoomManager` Map.
 - **Custom word lists:** host pastes comma/newline-separated words; each
