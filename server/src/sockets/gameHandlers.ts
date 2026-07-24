@@ -4,6 +4,7 @@ import {
   type WordChoosePayload,
   type WordPackCreatePayload,
   type WordPackCreateResult,
+  type DrawingRatePayload,
 } from "@pixelpanic/shared";
 import type { RoomManager } from "../game/RoomManager.js";
 import { createCustomWordPack } from "../db/wordPacksRepo.js";
@@ -23,6 +24,11 @@ export function registerGameHandlers(socket: Socket, roomManager: RoomManager): 
   socket.on(ClientEvents.WORD_CHOOSE, (payload: WordChoosePayload) => {
     const room = roomManager.getRoomBySocket(socket);
     room?.chooseWord(socket.id, payload.word);
+  });
+
+  socket.on(ClientEvents.DRAWING_RATE, (payload: DrawingRatePayload) => {
+    const room = roomManager.getRoomBySocket(socket);
+    room?.rateDrawing(socket.id, payload.rating);
   });
 
   socket.on(

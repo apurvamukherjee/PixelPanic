@@ -42,13 +42,21 @@ export function MaskedWordBanner() {
   const turn = useGameStore((s) => s.turn);
   const mySocketId = useRoomStore((s) => s.mySocketId);
   const drawTimeSec = useRoomStore((s) => s.room?.settings.drawTimeSec ?? 80);
+  // Set only once *this* client has correctly guessed — see markGuessedCorrectly.
+  // Non-drawer guessers never receive turn.word itself (see chooseWord,
+  // RoomInstance.ts), so this is the only way they learn the real word.
+  const revealedWordForMe = useGameStore((s) => s.revealedWordForMe);
   if (!turn) return null;
 
   // Reverse mode flips who sees what — the server sends the real word to
   // everyone except whoever is nominally "drawing" this turn, so "am I
-  // drawing blind" is just the normal isDrawer flag under the hood.
+  // drawing blind" is just the normal isDrawer flag under the hood. Either
+  // way, turn.word is non-null exactly when *this* client already has it;
+  // revealedWordForMe fills in the one case it can't cover — a guesser who
+  // just got it right.
   const isDrawer = turn.drawerId === mySocketId;
-  const iKnowTheWord = turn.isReverseMode ? !isDrawer : isDrawer;
+  const wordToShow = turn.word ?? revealedWordForMe;
+  const iKnowTheWord = wordToShow !== null;
 
   return (
     <div
@@ -74,12 +82,20 @@ export function MaskedWordBanner() {
           )}
         </div>
       )}
+      <div className="text-center font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/70">
+        Round {turn.roundIndex + 1} of {turn.totalRounds}
+      </div>
       {isDrawer && (
         <div className="text-center font-mono text-[10px] uppercase tracking-widest text-secondary">
           {turn.isReverseMode ? "You're guessing this turn" : "You are drawing"}
         </div>
       )}
-      <MaskedWordDisplay iKnowTheWord={iKnowTheWord} word={turn.word} maskedWord={turn.maskedWord} />
+      <MaskedWordDisplay iKnowTheWord={iKnowTheWord} word={wordToShow} maskedWord={turn.maskedWord} />
+      {!iKnowTheWord && (
+        <div className="-mt-1 text-center font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+          {turn.wordLength} {turn.wordLength === 1 ? "letter" : "letters"}
+        </div>
+      )}
       <CountdownBar totalSec={drawTimeSec} />
     </div>
   );

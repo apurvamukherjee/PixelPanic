@@ -29,6 +29,7 @@ import {
   type NearMissPayload,
   type NearMissPulsePayload,
   type WrongGuessPayload,
+  type DrawingRatingUpdatePayload,
   type SabotagePowerup,
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
@@ -109,6 +110,9 @@ export class RoomInstance implements TournamentHost {
   private gameStats = new Map<string, { roundsDrawn: number; correctGuesses: number }>();
   private mashupCandidateByAnon = new Map<string, { playerId: string; playerName: string }>();
   private mashupVotes = new Map<string, string>(); // voter anonId -> target playerId
+  // Guesser playerId -> their like/dislike of the drawer's current drawing.
+  // Per-turn, cleared in startTurn — not carried across the game.
+  private drawingRatings = new Map<string, "like" | "dislike">();
 
   constructor(
     private io: Server,
@@ -523,6 +527,7 @@ export class RoomInstance implements TournamentHost {
       isReverseMode: false,
       isMashupRound: false,
       mashupVoteOpen: false,
+      totalRounds: this.game.totalRounds,
     };
     this.startTurn(initialTurnIndices());
   }
@@ -588,6 +593,7 @@ export class RoomInstance implements TournamentHost {
       isReverseMode: false,
       isMashupRound: false,
       mashupVoteOpen: false,
+      totalRounds: this.game.totalRounds,
     };
     this.startTurn(initialTurnIndices());
   }
@@ -671,11 +677,24 @@ export class RoomInstance implements TournamentHost {
       isReverseMode: this.room.settings.chaosModes.reverseMode,
       isMashupRound,
       mashupVoteOpen: false,
+      totalRounds: this.game.totalRounds,
     };
     this.currentTurnStrokeIds = [];
     this.revealedIndices = new Set();
     this.mashupCandidateByAnon.clear();
     this.mashupVotes.clear();
+    this.drawingRatings.clear();
+    this.broadcast(ServerEvents.DRAWING_RATING_UPDATE, { likes: 0, dislikes: 0 } satisfies DrawingRatingUpdatePayload);
+    // committedOps/activeStrokeOps previously only got cleared by an
+    // explicit DRAW_CLEAR from the drawer's own Clear button (relayClear) —
+    // never automatically between turns. That meant this buffer (used to
+    // catch up a mid-game joiner or reconnect via DRAW_SNAPSHOT, see
+    // catchUpNewcomer) silently piled up every turn's strokes for the whole
+    // game, so anyone who joined/reconnected mid-game got every previous
+    // turn's drawing rendered stacked on top of each other — the actual bug
+    // behind "drawings are messed up for some people."
+    this.committedOps = [];
+    this.activeStrokeOps.clear();
     // Fixes a real gap: nothing previously told clients to wipe the canvas
     // between turns — currentTurnStrokeIds/revealedIndices were reset
     // server-side but the drawing itself lingered client-side until the
@@ -959,6 +978,26 @@ export class RoomInstance implements TournamentHost {
       teamScoreboard: this.currentTeamScoreboard(),
       unlockedTitles,
     } satisfies GameEndPayload);
+  }
+
+  // ---- drawing rating ----
+
+  // Guessers only — the drawer can't rate their own drawing, and ratings
+  // only count while the drawing is actually in progress so they can't be
+  // cast after the word's already revealed at round end.
+  rateDrawing(playerId: string, rating: "like" | "dislike"): void {
+    const turn = this.game.turn;
+    const player = this.room.players.find((p) => p.id === playerId);
+    if (!player || !turn || turn.phase !== "drawing" || playerId === turn.drawerId) return;
+    this.drawingRatings.set(playerId, rating);
+
+    let likes = 0;
+    let dislikes = 0;
+    for (const r of this.drawingRatings.values()) {
+      if (r === "like") likes += 1;
+      else dislikes += 1;
+    }
+    this.broadcast(ServerEvents.DRAWING_RATING_UPDATE, { likes, dislikes } satisfies DrawingRatingUpdatePayload);
   }
 
   // ---- chat / guessing ----

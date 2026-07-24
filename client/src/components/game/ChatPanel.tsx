@@ -130,10 +130,37 @@ export function ChatPanel() {
           className="custom-scrollbar h-full overflow-y-auto p-3 flex flex-col gap-2 text-sm"
         >
         {visibleMessages.map((m) => {
+          if (m.kind === "roundSeparator") {
+            return (
+              <div key={m.id} className="my-1 flex items-center gap-2">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                  {m.text}
+                </span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+            );
+          }
           if (m.kind === "system") {
             return (
               <div key={m.id} className="text-center text-xs italic text-on-surface-variant">
                 {m.text}
+              </div>
+            );
+          }
+          if (m.kind === "bot") {
+            return (
+              <div
+                key={m.id}
+                className="flex items-center gap-3 rounded-xl border border-secondary/40 bg-secondary/10 p-2.5"
+              >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-on-secondary">
+                  <Icon name="smart_toy" className="!text-sm" />
+                </div>
+                <span className="text-xs text-on-surface">
+                  <span className="font-bold text-secondary">{m.playerName}: </span>
+                  {m.text}
+                </span>
               </div>
             );
           }

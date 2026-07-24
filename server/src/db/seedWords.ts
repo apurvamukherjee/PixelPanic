@@ -155,6 +155,49 @@ const MYTHICAL_FANTASY_WORDS: string[] = [
   "spell book", "potion",
 ];
 
+const COUNTRY_WORDS: string[] = [
+  "usa", "canada", "mexico", "brazil", "argentina", "chile", "peru",
+  "colombia", "france", "germany", "italy", "spain", "portugal",
+  "netherlands", "switzerland", "sweden", "norway", "denmark", "poland",
+  "russia", "ukraine", "greece", "turkey", "egypt", "morocco", "nigeria",
+  "south africa", "kenya", "india", "china", "japan", "south korea",
+  "thailand", "vietnam", "indonesia", "australia", "new zealand",
+  "saudi arabia", "iceland", "ireland",
+];
+
+const FOOTBALL_CLUB_WORDS: string[] = [
+  "real madrid", "barcelona", "manchester united", "manchester city",
+  "liverpool", "chelsea", "arsenal", "tottenham", "bayern munich",
+  "borussia dortmund", "juventus", "ac milan", "inter milan",
+  "paris saint germain", "atletico madrid", "ajax", "benfica", "porto",
+  "napoli", "sevilla", "leicester city", "west ham", "everton",
+  "newcastle united", "celtic", "rangers", "boca juniors", "river plate",
+  "flamengo", "galatasaray",
+];
+
+const ANIME_WORDS: string[] = [
+  "naruto", "one piece", "dragon ball", "attack on titan", "death note",
+  "my hero academia", "demon slayer", "jujutsu kaisen", "tokyo ghoul",
+  "fullmetal alchemist", "bleach", "hunter x hunter", "sailor moon",
+  "pokemon", "one punch man", "cowboy bebop", "spirited away", "your name",
+  "princess mononoke", "akira", "neon genesis evangelion",
+  "sword art online", "fairy tail", "black clover", "chainsaw man",
+  "spy x family", "haikyuu", "jojo's bizarre adventure", "code geass",
+  "steins gate", "samurai champloo",
+];
+
+const FLAG_WORDS: string[] = [
+  "flag of japan", "flag of usa", "flag of uk", "flag of france",
+  "flag of italy", "flag of germany", "flag of brazil", "flag of india",
+  "flag of china", "flag of canada", "flag of mexico", "flag of spain",
+  "flag of south korea", "flag of switzerland", "flag of australia",
+  "flag of south africa", "flag of egypt", "flag of turkey",
+  "flag of greece", "flag of netherlands", "flag of sweden",
+  "flag of norway", "flag of jamaica", "flag of ireland", "flag of nigeria",
+  "checkered flag", "pirate flag", "white flag", "rainbow flag",
+  "flag football", "flag pole", "signal flag",
+];
+
 export interface BuiltInWordPack {
   id: string;
   name: string;
@@ -177,5 +220,9 @@ export const BUILT_IN_WORD_PACKS: BuiltInWordPack[] = [
   { id: "sports", name: "Sports", words: SPORTS_WORDS },
   { id: "movie-night", name: "Movie Night", words: MOVIE_NIGHT_WORDS },
   { id: "gamer-mode", name: "Gamer Mode", words: GAMER_MODE_WORDS },
+  { id: "countries", name: "Countries", words: COUNTRY_WORDS },
+  { id: "football-clubs", name: "Football Clubs", words: FOOTBALL_CLUB_WORDS },
+  { id: "anime", name: "Anime", words: ANIME_WORDS },
+  { id: "flags", name: "Flags", words: FLAG_WORDS },
   { id: "mythical-fantasy", name: "Mythical & Fantasy", words: MYTHICAL_FANTASY_WORDS },
 ];

@@ -14,8 +14,8 @@ export function App() {
   useSocket();
 
   // Browsers block audio until a user gesture — grab the very first
-  // click/tap/keypress anywhere to unlock the Web Audio context and kick
-  // off background music if the player hasn't muted it.
+  // click/tap/keypress anywhere to unlock the Web Audio context so the first
+  // sound effect doesn't get silently dropped.
   useEffect(() => {
     const unlock = () => useAudioStore.getState().unlock();
     window.addEventListener("pointerdown", unlock, { once: true });

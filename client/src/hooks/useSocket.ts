@@ -20,6 +20,7 @@ import {
   type NearMissPayload,
   type NearMissPulsePayload,
   type WrongGuessPayload,
+  type DrawingRatingUpdatePayload,
   type SabotagePowerupGrantedPayload,
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
@@ -36,6 +37,9 @@ import { useChaosStore } from "../store/useChaosStore";
 import { useRivalStore } from "../store/useRivalStore";
 import { useFeedbackStore } from "../store/useFeedbackStore";
 import { useAudioStore } from "../store/useAudioStore";
+import { pickNearMissQuip, pickWrongGuessQuip, pickCorrectGuessQuip } from "../lib/botQuips";
+
+const BOT_NAME = "Apurva's Bot";
 
 // Wires every non-drawing server event into the relevant store. Drawing
 // events are subscribed to directly inside DrawingCanvas (imperative canvas
@@ -65,6 +69,17 @@ export function useSocket() {
     };
     const onTurnStart = (payload: TurnStartPayload) => {
       useGameStore.getState().applyTurnStart(payload);
+      const drawer = useRoomStore.getState().room?.players.find((p) => p.id === payload.turn.drawerId);
+      useChatStore.getState().addMessage({
+        id: crypto.randomUUID(),
+        playerId: "system",
+        playerName: "System",
+        text: `Round ${payload.turn.roundIndex + 1} of ${payload.turn.totalRounds} — ${drawer?.name ?? "Someone"} is drawing`,
+        ts: Date.now(),
+        kind: "roundSeparator",
+        channel: "room",
+        teamId: null,
+      });
     };
     const onTimerTick = (payload: TimerTickPayload) => {
       useGameStore.getState().applyTimerTick(payload.turnEndsAt, payload.serverNow);
@@ -76,14 +91,14 @@ export function useSocket() {
       useChatStore.getState().addMessage(msg);
     };
     const onGuessCorrect = (payload: GuessCorrectPayload) => {
-      useGameStore.getState().markGuessedCorrectly();
+      useGameStore.getState().markGuessedCorrectly(payload.word);
       useFeedbackStore.getState().triggerCorrectGuess(payload.pointsAwarded);
       useAudioStore.getState().playCorrect();
       useChatStore.getState().addMessage({
         id: crypto.randomUUID(),
         playerId: "system",
-        playerName: "System",
-        text: `Correct! +${payload.pointsAwarded} points`,
+        playerName: BOT_NAME,
+        text: `Correct! +${payload.pointsAwarded} points — ${pickCorrectGuessQuip()}`,
         ts: Date.now(),
         kind: "correctGuess",
         channel: "room",
@@ -148,8 +163,8 @@ export function useSocket() {
       useChatStore.getState().addMessage({
         id: crypto.randomUUID(),
         playerId: "system",
-        playerName: "System",
-        text: `"${payload.guess}" is ${payload.hint} — so close!`,
+        playerName: BOT_NAME,
+        text: `"${payload.guess}" is ${payload.hint} — ${pickNearMissQuip()}`,
         ts: Date.now(),
         kind: "nearMiss",
         channel: "room",
@@ -158,6 +173,19 @@ export function useSocket() {
     };
     const onWrongGuess = (_payload: WrongGuessPayload) => {
       useAudioStore.getState().playWrong();
+      useChatStore.getState().addMessage({
+        id: crypto.randomUUID(),
+        playerId: "system",
+        playerName: BOT_NAME,
+        text: pickWrongGuessQuip(),
+        ts: Date.now(),
+        kind: "bot",
+        channel: "room",
+        teamId: null,
+      });
+    };
+    const onDrawingRatingUpdate = (payload: DrawingRatingUpdatePayload) => {
+      useGameStore.getState().applyDrawingRatingUpdate(payload);
     };
     const onSabotageGranted = (payload: SabotagePowerupGrantedPayload) => {
       useChaosStore.getState().setPendingPowerup(payload.powerup);
@@ -190,6 +218,7 @@ export function useSocket() {
 
     socket.on(ServerEvents.NEAR_MISS, onNearMiss);
     socket.on(ServerEvents.WRONG_GUESS, onWrongGuess);
+    socket.on(ServerEvents.DRAWING_RATING_UPDATE, onDrawingRatingUpdate);
     socket.on(ServerEvents.NEAR_MISS_PULSE, onNearMissPulse);
     socket.on(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
     socket.on(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
@@ -225,6 +254,7 @@ export function useSocket() {
       socket.off(ServerEvents.TOURNAMENT_COMPLETE, onTournamentComplete);
       socket.off(ServerEvents.NEAR_MISS, onNearMiss);
       socket.off(ServerEvents.WRONG_GUESS, onWrongGuess);
+      socket.off(ServerEvents.DRAWING_RATING_UPDATE, onDrawingRatingUpdate);
       socket.off(ServerEvents.NEAR_MISS_PULSE, onNearMissPulse);
       socket.off(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
       socket.off(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);

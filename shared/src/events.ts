@@ -25,6 +25,8 @@ export const ClientEvents = {
   // Phase 3 — chaos modes
   SABOTAGE_USE_POWERUP: "sabotage:usePowerup",
   MASHUP_VOTE: "mashup:vote",
+  // Guesser -> server: like/dislike the drawing currently being drawn.
+  DRAWING_RATE: "drawing:rate",
 } as const;
 
 export const ServerEvents = {
@@ -71,6 +73,9 @@ export const ServerEvents = {
   // Phase 3 — retention features
   RIVAL_STATE: "rival:state",
   RIVAL_ONLINE_CHANGED: "rival:onlineChanged",
+  // Broadcast live like/dislike tally for the current turn's drawing —
+  // resets to {0, 0} at the start of every turn.
+  DRAWING_RATING_UPDATE: "drawing:ratingUpdate",
 } as const;
 
 export type ClientEventName = (typeof ClientEvents)[keyof typeof ClientEvents];

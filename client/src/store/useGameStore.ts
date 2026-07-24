@@ -8,6 +8,7 @@ import type {
   GameEndPayload,
   ScoreUpdatePayload,
   WordChoicesPayload,
+  DrawingRatingUpdatePayload,
 } from "@pixelpanic/shared";
 
 interface GameState {
@@ -24,6 +25,10 @@ interface GameState {
   // Private GUESS_CORRECT only reaches the guesser, so this is the only way
   // the client itself knows "did I get it this turn" — reset each TURN_START.
   iGuessedThisTurn: boolean;
+  // The word, once *this* client has guessed it correctly — GUESS_CORRECT is
+  // the only event that ever hands a non-drawer guesser the real word (see
+  // MaskedWordBanner), since turn.word itself stays null for them.
+  revealedWordForMe: string | null;
   // This round's drawer order, from the server (see TurnStartPayload) —
   // recomputing this client-side would mean reimplementing team-interleaved
   // rotation and connected-player filtering.
@@ -34,6 +39,9 @@ interface GameState {
   // newly-revealed letter.
   revealedIndices: number[];
   justRevealedIndex: number | null;
+  // Live like/dislike tally for the current turn's drawing — reset by the
+  // server (and here) at the start of every turn.
+  drawingRating: DrawingRatingUpdatePayload;
 
   applyPhaseChange: (phase: GamePhase) => void;
   applyWordChoices: (payload: WordChoicesPayload) => void;
@@ -43,7 +51,8 @@ interface GameState {
   applyScoreUpdate: (payload: ScoreUpdatePayload) => void;
   applyRoundEnd: (payload: RoundEndPayload) => void;
   applyGameEnd: (payload: GameEndPayload) => void;
-  markGuessedCorrectly: () => void;
+  applyDrawingRatingUpdate: (payload: DrawingRatingUpdatePayload) => void;
+  markGuessedCorrectly: (word: string) => void;
   reset: () => void;
 }
 
@@ -59,9 +68,11 @@ export const useGameStore = create<GameState>((set) => ({
   finalScoreboard: null,
   clockOffsetMs: 0,
   iGuessedThisTurn: false,
+  revealedWordForMe: null,
   rotationPlayerIds: [],
   revealedIndices: [],
   justRevealedIndex: null,
+  drawingRating: { likes: 0, dislikes: 0 },
 
   applyPhaseChange: (phase) => set({ phase }),
 
@@ -74,9 +85,11 @@ export const useGameStore = create<GameState>((set) => ({
       wordChoices: null,
       lastRoundEnd: null,
       iGuessedThisTurn: false,
+      revealedWordForMe: null,
       rotationPlayerIds: payload.rotationPlayerIds,
       revealedIndices: [],
       justRevealedIndex: null,
+      drawingRating: { likes: 0, dislikes: 0 },
     }),
 
   applyTimerTick: (turnEndsAt, serverNow) =>
@@ -121,7 +134,9 @@ export const useGameStore = create<GameState>((set) => ({
       unlockedTitles: payload.unlockedTitles ?? null,
     }),
 
-  markGuessedCorrectly: () => set({ iGuessedThisTurn: true }),
+  applyDrawingRatingUpdate: (payload) => set({ drawingRating: payload }),
+
+  markGuessedCorrectly: (word) => set({ iGuessedThisTurn: true, revealedWordForMe: word }),
 
   reset: () =>
     set({
@@ -136,8 +151,10 @@ export const useGameStore = create<GameState>((set) => ({
       finalScoreboard: null,
       clockOffsetMs: 0,
       iGuessedThisTurn: false,
+      revealedWordForMe: null,
       rotationPlayerIds: [],
       revealedIndices: [],
       justRevealedIndex: null,
+      drawingRating: { likes: 0, dislikes: 0 },
     }),
 }));

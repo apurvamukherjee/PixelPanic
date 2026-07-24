@@ -9,6 +9,7 @@ import { MashupVoteOverlay } from "./MashupVoteOverlay";
 import { RoundEndOverlay } from "./RoundEndOverlay";
 import { GuessCorrectAnimation } from "./GuessCorrectAnimation";
 import { TurnOrderStrip } from "./TurnOrderStrip";
+import { DrawingRating } from "./DrawingRating";
 
 type MobileTab = "players" | "chat";
 
@@ -28,6 +29,7 @@ export function GameScreen() {
         <MaskedWordBanner />
         <DrawingCanvas />
         <Toolbar />
+        <DrawingRating />
       </div>
 
       {/* Chat — sidebar on desktop, tabbed panel on mobile */}

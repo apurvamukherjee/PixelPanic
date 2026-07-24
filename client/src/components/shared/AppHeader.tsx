@@ -21,9 +21,8 @@ export function AppHeader() {
   const socket = useConnectionStore((s) => s.socket);
   const navigate = useNavigate();
   const sfxOn = useAudioStore((s) => s.sfxOn);
-  const musicOn = useAudioStore((s) => s.musicOn);
   const toggleMuted = useAudioStore((s) => s.toggleMuted);
-  const muted = !sfxOn && !musicOn;
+  const muted = !sfxOn;
 
   useEffect(() => {
     load(getAnonId());

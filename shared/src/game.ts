@@ -23,6 +23,10 @@ export interface TurnState {
   isReverseMode: boolean;
   isMashupRound: boolean;
   mashupVoteOpen: boolean; // true during the post-turn vote window on a mashup round
+  // Snapshotted from GameState.totalRounds — a tournament match forces this
+  // to 1 regardless of the room's configured roundCount, so the client needs
+  // the real per-turn value rather than reading room.settings.roundCount.
+  totalRounds: number;
 }
 
 export interface GameState {

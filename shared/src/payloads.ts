@@ -196,6 +196,15 @@ export interface WrongGuessPayload {
   guess: string;
 }
 
+export interface DrawingRatePayload {
+  rating: "like" | "dislike";
+}
+
+export interface DrawingRatingUpdatePayload {
+  likes: number;
+  dislikes: number;
+}
+
 export type SabotagePowerup = "blur" | "swapGuesses" | "freezePalette";
 
 export interface SabotagePowerupGrantedPayload {
