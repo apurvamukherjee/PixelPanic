@@ -172,6 +172,65 @@ body {
   animation: score-pop 0.3s ease-out;
 }
 
+/* Full-screen "you guessed it" celebration — bigger and louder than the
+   chat-row .guess-correct bounce, since this is the guesser's own moment. */
+@keyframes guess-celebrate {
+  0% {
+    transform: scale(0.6) rotate(-4deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+.guess-celebrate {
+  animation: guess-celebrate 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* "Time's up, you didn't get it" — a small regretful shake, not a bounce. */
+@keyframes miss-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+.miss-shake {
+  animation: miss-shake 0.4s ease-in-out;
+}
+
+/* Round-end score screen — pops in over the canvas for the brief
+   ROUND_END_PAUSE_MS pause between turns. */
+@keyframes round-end-pop {
+  0% {
+    transform: scale(0.92) translateY(8px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+.round-end-pop {
+  animation: round-end-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 /* Player join/leave list transitions. */
 @keyframes player-join {
   0% {

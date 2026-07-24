@@ -21,6 +21,9 @@ interface GameState {
   lastRoundEnd: RoundEndPayload | null;
   finalScoreboard: GameEndPayload["finalScoreboard"] | null;
   clockOffsetMs: number; // serverNow - Date.now(), applied to render an accurate countdown
+  // Private GUESS_CORRECT only reaches the guesser, so this is the only way
+  // the client itself knows "did I get it this turn" — reset each TURN_START.
+  iGuessedThisTurn: boolean;
 
   applyPhaseChange: (phase: GamePhase) => void;
   applyWordChoices: (payload: WordChoicesPayload) => void;
@@ -30,6 +33,7 @@ interface GameState {
   applyScoreUpdate: (payload: ScoreUpdatePayload) => void;
   applyRoundEnd: (payload: RoundEndPayload) => void;
   applyGameEnd: (payload: GameEndPayload) => void;
+  markGuessedCorrectly: () => void;
   reset: () => void;
 }
 
@@ -44,6 +48,7 @@ export const useGameStore = create<GameState>((set) => ({
   lastRoundEnd: null,
   finalScoreboard: null,
   clockOffsetMs: 0,
+  iGuessedThisTurn: false,
 
   applyPhaseChange: (phase) => set({ phase }),
 
@@ -55,6 +60,7 @@ export const useGameStore = create<GameState>((set) => ({
       phase: payload.turn.phase,
       wordChoices: null,
       lastRoundEnd: null,
+      iGuessedThisTurn: false,
     }),
 
   applyTimerTick: (turnEndsAt, serverNow) =>
@@ -94,6 +100,8 @@ export const useGameStore = create<GameState>((set) => ({
       unlockedTitles: payload.unlockedTitles ?? null,
     }),
 
+  markGuessedCorrectly: () => set({ iGuessedThisTurn: true }),
+
   reset: () =>
     set({
       phase: "lobby",
@@ -106,5 +114,6 @@ export const useGameStore = create<GameState>((set) => ({
       lastRoundEnd: null,
       finalScoreboard: null,
       clockOffsetMs: 0,
+      iGuessedThisTurn: false,
     }),
 }));

@@ -30,6 +30,7 @@ import { useChatStore } from "../store/useChatStore";
 import { useTournamentStore } from "../store/useTournamentStore";
 import { useChaosStore } from "../store/useChaosStore";
 import { useRivalStore } from "../store/useRivalStore";
+import { useFeedbackStore } from "../store/useFeedbackStore";
 
 // Wires every non-drawing server event into the relevant store. Drawing
 // events are subscribed to directly inside DrawingCanvas (imperative canvas
@@ -65,6 +66,8 @@ export function useSocket() {
       useChatStore.getState().addMessage(msg);
     };
     const onGuessCorrect = (payload: GuessCorrectPayload) => {
+      useGameStore.getState().markGuessedCorrectly();
+      useFeedbackStore.getState().triggerCorrectGuess(payload.pointsAwarded);
       useChatStore.getState().addMessage({
         id: crypto.randomUUID(),
         playerId: "system",

@@ -6,6 +6,8 @@ import { PlayerList } from "./PlayerList";
 import { ChatPanel } from "./ChatPanel";
 import { WordChoiceOverlay } from "./WordChoiceOverlay";
 import { MashupVoteOverlay } from "./MashupVoteOverlay";
+import { RoundEndOverlay } from "./RoundEndOverlay";
+import { GuessCorrectAnimation } from "./GuessCorrectAnimation";
 
 type MobileTab = "players" | "chat";
 
@@ -55,6 +57,8 @@ export function GameScreen() {
 
       <WordChoiceOverlay />
       <MashupVoteOverlay />
+      <RoundEndOverlay />
+      <GuessCorrectAnimation />
     </div>
   );
 }
