@@ -1,21 +1,115 @@
 # HANDOFF — Pixelpanic
 
-**Date:** 2026-07-24
-**Status:** Phase 1 (MVP) built and scripted-verified. Phase 2 (team mode,
-round-robin tournament, word-pack builder) and Phase 3 (chaos modes, legacy
-titles, rival system, avatars, animated background/UI polish — everything
-except ghost drawing, which is deliberately deferred) are both built on top
-of it — typechecked, linted, built, unit-tested (Vitest, 45 tests across
-every pure scoring/rotation/scheduling/matching function), and REST/
-migration-level runtime-smoke-tested, but **neither has been human-
-playtested in a browser yet**. Production-readiness work (rate limiting, a
-client error boundary, Docker/Fly.io deploy config) is also done. See the
-"Phase 2" and "Phase 3" sections below for exactly what to verify next.
+**Date:** 2026-07-24 (latest session)
+**Status:** Phase 1 (MVP), Phase 2 (team mode, round-robin tournament,
+word-pack builder), and Phase 3 (chaos modes, legacy titles, rival system,
+avatars, animated background/UI polish — everything except ghost drawing,
+which is deliberately deferred) are all built, typechecked, linted, built,
+and unit-tested (Vitest, 45 tests across every pure scoring/rotation/
+scheduling/matching function). A follow-up session on top of all three
+phases added round-flow animations, a 10-item UI/UX polish pass, mid-game
+join/reconnect with a live canvas catch-up, a fix for the drawer's own
+stroke lagging once deployed, and a room-lifecycle rework (leave/close,
+ghost-room cleanup) — see "Latest session — post-Phase-3 additions" below.
+That session's changes **were** verified with real, scripted browser
+automation (Playwright, driven headless via a throwaway script in the
+scratchpad — not part of the committed codebase) across multiple browser
+contexts; Phase 1/2/3 themselves still only have REST/migration-level
+runtime smoke tests plus scripted Phase-1-loop verification (see "How it was
+verified" below) — **no full human playtest of every chaos mode, team mode,
+or tournament has happened yet.** See the "Phase 2," "Phase 3," and latest-
+session sections below for exactly what to verify next.
 
 This doc is the "pick up where we left off" reference. For architecture and
-conventions, see [CLAUDE.md](CLAUDE.md) (Phase 1 + 2). For setup/run
-instructions, see [README.md](README.md). For what's next, see
+conventions, see [CLAUDE.md](CLAUDE.md). For setup/run instructions
+(including the Windows `better-sqlite3` build note), see CLAUDE.md's
+"Run / build" section — README.md is intentionally just the GitHub-facing
+project pitch now, not a setup guide. For what's next, see
 [PHASE3-PLAN.md](PHASE3-PLAN.md).
+
+---
+
+## Latest session — post-Phase-3 additions
+
+Built on top of Phase 1-3 without restructuring it, except where noted as a
+deliberate revision. See CLAUDE.md's "Post-Phase-3 additions" section for
+the file-level implementation facts — this section is the narrative/status
+version.
+
+**Round-flow animations.** A guesser sees a non-blocking "Correct! +N" top
+toast the instant their guess lands (was previously only a chat-row bounce).
+Anyone who *didn't* guess sees "Time's up" at round end instead; the drawer
+sees a distinct "Everyone guessed it!" celebration when the all-guessed
+bonus fires. The round-end score screen (`RoundEndOverlay.tsx`, new) reveals
+word → your result → scoreboard in sequence rather than all at once, and is
+explicitly sequenced so it can never render on top of the mid-turn "Correct!"
+toast (the toast self-dismisses the instant the phase leaves `"drawing"`).
+
+**10-item UI/UX polish pass:** a drawer-only near-miss "heat" pulse on
+`PlayerList` (new `NEAR_MISS_PULSE` event, no guess text leaked), a
+persistent "up next" turn-order strip, a radial countdown ring on the
+word-choice overlay, a per-letter flip animation as hints reveal, a chat
+auto-scroll pin with a "jump to latest" pill, toolbar tooltips + keyboard
+shortcuts (B/E/F/P, `[`/`]` for size), a reconnect toast with a live
+countdown (client-side, diffed off `room.players[].connected` — no new
+server event needed for this part), a "+N" score flyup on `PlayerList`, and
+an empty-canvas "start drawing…" nudge for the drawer.
+
+**Mid-game join / reconnect catch-up.** Previously a real, silent gap: a
+brand-new player joining an in-progress game got nothing about the game
+state at all and sat stuck on the lobby screen; even a *reconnecting*
+player only got a bare phase string, never the actual turn/score/canvas.
+Fixed via `RoomInstance.catchUpNewcomer()` (private `TURN_START` + `SCORE_
+UPDATE` + a new `DRAW_SNAPSHOT` replaying the current turn's strokes so far)
+called from both branches of `join()`. Verified end-to-end with a 3-browser-
+context Playwright script: a latecomer joining mid-turn sees the full game
+screen (masked word, timer, turn-order strip, player list) and the
+in-progress drawing, not a blank lobby.
+
+**Online drawing latency fix.** The drawer's own stroke now paints from
+local pointer input immediately instead of waiting on the server's echoed
+broadcast — invisible on localhost (~0ms RTT), but real, visible lag once
+deployed. This is a deliberate revision of a documented Phase 1
+non-negotiable ("don't add a local optimistic stroke rendering path") — see
+CLAUDE.md's updated note on it. Verified: the drawer's own canvas shows ink
+with *zero* explicit wait after a mouse move in a scripted test; other
+players are unaffected (still rendered purely from the echo, confirmed via
+matching ink coverage on both canvases after a stroke completes).
+
+**Room lifecycle rework**, prompted by a real reported bug ("closing a room
+and creating a new one doesn't work"). Two separate bugs, both fixed:
+1. **Server-side ghost rooms**: switching rooms on the same socket without
+   an explicit leave left the old room with a permanently-"connected" ghost
+   player, so it was never garbage-collected and the old Socket.IO channel
+   kept bleeding into the new session. `RoomManager.createRoom`/`joinRoom`
+   now route through a proper `RoomInstance.leave()` first.
+2. **Client-side stale state**: navigating back to Home (browser back
+   button) left the old `room` sitting in the Zustand store. Clicking
+   "Create Private Room" again fired the `pending && room` navigation
+   effect on that *stale* room instantly, before the server even responded
+   with the new one — so the user got bounced right back into the room they
+   were trying to leave. Fixed by clearing room-scoped state on `HomePage`
+   mount.
+
+Also, per explicit request: **host leaving now closes the room** instead of
+silently transferring host to someone else (a disconnected host still gets
+the full 20s reconnect grace period first, so a brief blip isn't fatal), and
+there's now a real "Leave Room" button (`AppHeader`, visible whenever you're
+in a room) — previously `ROOM_LEAVE` had a server handler but nothing in the
+client ever emitted it.
+
+Verified end-to-end with scripted Playwright tests: create room A → browser
+back → create room B lands on a genuinely new room (not stuck on A); room A
+correctly reports not-found afterward; host clicking "Leave room" bounces
+the other player home with a "the host left" message. No console errors in
+any of the above.
+
+**Not yet verified from this session:** none of the above was tested on an
+actual phone/touch device, and the reconnect-toast countdown / auto-rejoin-
+on-transport-reconnect path (`useConnectionStore`'s `connect` handler
+re-emitting `ROOM_JOIN`) was reasoned through but not exercised against a
+real dropped WebSocket (only against the room-switch/leave scenarios above,
+which don't go through a real disconnect).
 
 ---
 
@@ -356,18 +450,27 @@ rather than trusting independent client-side computation.
    leaderboard, then a team-mode game, then a 3+ player tournament, then a
    game with each chaos mode toggled on, then click through the word-pack
    builder and the rival panel — see the three "Not yet verified" sections
-   above for the specific things to check.
+   above for the specific things to check. The latest session's own
+   additions (round-flow animations, mid-game join, the UI/UX polish batch)
+   have scripted browser coverage already (see "Latest session" above) but
+   not a human playtest pass either.
 2. Test on an actual phone (or DevTools device toolbar) for the mobile
-   layout, touch-drawing, the glassmorphism/font rendering, and the new
-   `AppHeader`/doodle background not interfering with anything.
-3. Build the Docker image locally (`docker build -t pixelpanic .`) and run
-   it once before trusting it in Fly.io — it hasn't been built in this
-   environment (no Docker available here).
-4. `flyctl auth login` → `flyctl launch --no-deploy` → create the
-   `pixelpanic_data` volume → `flyctl deploy`, per README.md's "Deploying"
-   section.
-5. Commit the working tree once signed off — commits are intentionally left
-   to the user rather than made automatically.
+   layout, touch-drawing, the glassmorphism/font rendering, and the
+   `AppHeader`/doodle background/reconnect-toast stack not interfering with
+   anything.
+3. **Deploy target is Render** (`render.yaml` at the repo root — free tier,
+   Docker runtime, no payment method required; see that file's own comment
+   for the trade-offs accepted vs. the Fly.io path). `Dockerfile`/`fly.toml`
+   are still in the repo as an alternative path if Render's free-tier
+   sleep-on-idle or ephemeral-disk trade-offs ever stop being acceptable —
+   see `render.yaml`'s comment for exactly what upgrading would fix. Build
+   the Docker image locally (`docker build -t pixelpanic .`) at least once
+   before trusting either path — it hasn't been built in this environment
+   (no Docker available here).
+4. If a real head-to-head deploy comparison is ever wanted: `flyctl auth
+   login` → `flyctl launch --no-deploy` → create the `pixelpanic_data`
+   volume → `flyctl deploy` for the Fly.io path (persistent volume, always-
+   on, no sleep — costs money).
 
 ---
 

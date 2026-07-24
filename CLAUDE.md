@@ -1,4 +1,4 @@
-# CLAUDE.md — Pixelpanic (Phase 1 + 2)
+# CLAUDE.md — Pixelpanic
 
 ## What this is
 
@@ -7,14 +7,18 @@ style). Guest-only, friend-group scale: no accounts, no Redis, no
 horizontal-scaling infrastructure. One process serves the API, the socket
 connections, and (in production) the built client.
 
-This file documents **Phase 1 architecture in full, plus Phase 2 and Phase 3
-addenda** (Phase 2: team mode, round-robin tournament, word-pack builder —
-see "Phase 2 additions" below. Phase 3: chaos modes, legacy titles, rival
-system, avatars — see "Phase 3 additions" below). Everything in the earlier
-sections is still accurate; each phase only adds to it, nothing was
-restructured. See [PHASE3-PLAN.md](PHASE3-PLAN.md) for the detailed
-per-feature design rationale and [HANDOFF.md](HANDOFF.md) for current status
-and what's been verified.
+This file documents **Phase 1 architecture in full, plus Phase 2, Phase 3,
+and post-Phase-3 addenda** (Phase 2: team mode, round-robin tournament,
+word-pack builder — see "Phase 2 additions" below. Phase 3: chaos modes,
+legacy titles, rival system, avatars — see "Phase 3 additions" below.
+Post-Phase-3: round-flow animations, a UI/UX polish pass, mid-game join/
+reconnect, the local-first drawing fix, and the room-lifecycle rework — see
+"Post-Phase-3 additions" below). Everything in the earlier sections is still
+accurate; each addition only adds to it, nothing was restructured except
+where a section explicitly says a prior decision was revised. See
+[PHASE3-PLAN.md](PHASE3-PLAN.md) for the detailed per-feature design
+rationale and [HANDOFF.md](HANDOFF.md) for current status and what's been
+verified.
 
 ## Stack (fixed, do not substitute)
 
@@ -32,8 +36,19 @@ npm run typecheck    # tsc --noEmit, server + client
 npm run build         # client build + server typecheck — should be clean before any change is considered done
 ```
 
-`better-sqlite3` requires a native build on first `npm install` — see
-README.md's Windows note if it fails with a node-gyp/Python error.
+`better-sqlite3` requires a native build on first `npm install`. On Windows,
+that means **Python 3** (the real one, not the Microsoft Store stub) and
+**Visual Studio Build Tools** with the "Desktop development with C++"
+workload, both on `PATH`, before running `npm install` — `npm install -g
+windows-build-tools` is deprecated/broken on modern npm and should not be
+used (see HANDOFF.md's "Environment setup friction" section for the full
+story of what didn't work).
+
+If `http://localhost:5173` ever serves the wrong app during dev, another
+process may already own IPv6 loopback (`[::1]:5173`) while Vite binds the
+IPv4/dual-stack address — Windows allows two different processes to share a
+port number across address families. Check with `netstat -ano | findstr
+:5173`, or just use `http://127.0.0.1:5173` directly.
 
 ## Monorepo layout
 
@@ -334,3 +349,74 @@ HANDOFF.md's "Phase 3 — what was built" section; the load-bearing facts:
   color, reusing the webfont already loaded rather than a bespoke art
   pipeline). `Avatar.tsx` falls back to today's initials-circle when
   `avatarId` is null/unrecognized.
+
+## Post-Phase-3 additions
+
+A round of round-flow animations, a 10-item UI/UX polish pass, mid-game
+join/reconnect, an online-drawing-latency fix, and a room-lifecycle rework —
+all built on top of Phase 1-3 without restructuring it, except where noted
+below as a deliberate revision of an earlier documented decision. Full
+narrative in HANDOFF.md's latest session section; the load-bearing facts:
+
+- **Round-flow feedback is three small pieces, deliberately sequenced so
+  they never overlap.** A private `GUESS_CORRECT` (already existed) now also
+  triggers a non-blocking top-toast ("Correct! +N") via `useFeedbackStore`,
+  which self-dismisses the instant `phase` leaves `"drawing"` — needed
+  because the *last* eligible guess ends the turn synchronously
+  server-side, so `ROUND_END` can otherwise land a beat after the toast
+  while it's still visible. `RoundEndOverlay.tsx` (new) owns the roundEnd
+  phase's score screen — word reveal, then a "You got it"/"Time's up"/
+  "Everyone guessed it!" badge, then the scoreboard, staggered via
+  `animation-delay` rather than popping in as one block. `iGuessedThisTurn`
+  on `useGameStore` (reset every `TURN_START`) is the only way a client
+  knows "did *I* get it this turn," since `GUESS_CORRECT` is private and
+  `TurnState.correctGuesserIds` is never synced to non-drawer clients
+  mid-turn.
+- **Mid-game joiners and reconnecting players now actually see the game.**
+  This was a real, silent gap: `RoomInstance.join()` sent a brand-new
+  player nothing about an in-progress game at all (they'd sit on the lobby
+  screen while phase stayed `"lobby"` client-side), and even a *reconnecting*
+  player only got a bare `GAME_PHASE_CHANGE` string, never the actual
+  `TurnState`. `catchUpNewcomer()` now sends a private `TURN_START`-shaped
+  payload (word masked exactly like a normal non-drawer — a newcomer is
+  never the in-progress turn's drawer), `SCORE_UPDATE`, and — new —
+  `DRAW_SNAPSHOT`: the server now buffers the current turn's committed
+  strokes/fills (`RoomInstance.committedOps`/`activeStrokeOps`, mirroring
+  the client's own `StrokeRenderer.committed`/`active` split) and replays
+  them privately so the canvas isn't blank until the next turn's
+  `DRAW_CLEAR`. `TurnStartPayload.rotationPlayerIds` (new field, sent every
+  `TURN_START`) is what the turn-order strip reads — it's the server's own
+  `rotationAnonIds` mapped to connected players' socket ids, not
+  reimplemented client-side, since team-interleaved rotation and
+  connected-player filtering both live in `RoomInstance`.
+- **The drawer's own stroke now renders from local input, not the echo —
+  revises the Phase 1 non-negotiable in the "turn/round state machine"
+  section above.** Waiting on `io.to(room).emit`'s echo for your *own* pen
+  was invisible on localhost (~0ms RTT) but reads as real input lag once
+  deployed. `DrawingCanvas.tsx`'s `localStrokeIdsRef` tracks which
+  strokeIds were rendered from local pointer input so their own echo is
+  checked and skipped, not re-applied — everyone else's strokes are
+  completely unaffected, still rendered purely from the echo. See that
+  file's module comment before touching this path; the invariant is "a
+  strokeId is rendered from exactly one source."
+- **Host disconnect/leave no longer transfers host — it closes the room.**
+  Revises the Phase 1 "Disconnects" decision below: a disconnected host now
+  keeps `isHost`/`room.hostId` through the full 20s reconnect grace window
+  (repointed at their new socket id on reconnect) instead of losing it
+  immediately, and if the grace period expires without them coming back —
+  or they leave voluntarily via `RoomInstance.leave()` (wired to
+  `ROOM_LEAVE` and to `AppHeader`'s "Leave room" button) — the room closes
+  outright (`closeRoom()` → `ROOM_CLOSED` to everyone still in it) rather
+  than handing it to another player. `forceKick` (votekick) is the one
+  deliberate exception, still transferring host, since a votekick means the
+  room should keep going. `RoomManager.createRoom`/`joinRoom` also
+  defensively run a socket through the same voluntary-leave path if it's
+  still marked as a member of a *different* room — without that, a socket
+  switching rooms without an explicit leave (e.g. browser back-button from
+  an active room into "Create another room") left a permanently-connected
+  ghost player behind in the old room, which then never got
+  garbage-collected. `HomePage.tsx` also clears local room-scoped state on
+  mount for the same reason: a stale `room` still in the Zustand store was
+  making the create/join effect fire on the *old* room the instant
+  `pending` flipped true, before the server's response for the new one
+  ever arrived.

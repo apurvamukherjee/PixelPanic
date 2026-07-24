@@ -29,6 +29,7 @@ That plays out across three phases:
   against someone at your skill level. Ghost drawing (a crowd-average
   overlay) is intentionally deferred — it needs a stroke-aggregation
   pipeline fed by real play history that doesn't exist yet.
+
 ## Features
 
 **Play**
@@ -37,9 +38,15 @@ That plays out across three phases:
 - Configurable round count, draw time, and hint frequency
 - Live incremental stroke sync (everyone watches the drawing happen, not a
   finished image) with pencil, brush, eraser, paint-bucket fill, and a full
-  color palette
+  color palette — the drawer's own pen renders instantly, with zero lag even
+  over a real network
 - Progressive hint reveal and time-decayed scoring, so early correct guesses
-  are worth more than last-second ones
+  are worth more than last-second ones, with animated round-flow feedback
+  (correct-guess toasts, a staged round-end score reveal)
+- Jump into a game already in progress — mid-game joiners and reconnecting
+  players catch up on the current turn, scores, and drawing instantly
+- A 20-second reconnect grace period for dropped connections, with a live
+  countdown so it's never a mystery why someone's avatar dimmed
 - Mod tools: votekick and mute, majority-gated server-side
 
 **Team mode**
