@@ -8,6 +8,7 @@ import { WordChoiceOverlay } from "./WordChoiceOverlay";
 import { MashupVoteOverlay } from "./MashupVoteOverlay";
 import { RoundEndOverlay } from "./RoundEndOverlay";
 import { GuessCorrectAnimation } from "./GuessCorrectAnimation";
+import { TurnOrderStrip } from "./TurnOrderStrip";
 
 type MobileTab = "players" | "chat";
 
@@ -23,6 +24,7 @@ export function GameScreen() {
 
       {/* Canvas column — always visible */}
       <div className="flex min-h-0 flex-col gap-3">
+        <TurnOrderStrip />
         <MaskedWordBanner />
         <DrawingCanvas />
         <Toolbar />

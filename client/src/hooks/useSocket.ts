@@ -18,6 +18,7 @@ import {
   type TournamentStatePayload,
   type TournamentCompletePayload,
   type NearMissPayload,
+  type NearMissPulsePayload,
   type SabotagePowerupGrantedPayload,
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
@@ -167,7 +168,12 @@ export function useSocket() {
       useRivalStore.getState().setOnline(payload.rivalOnline);
     };
 
+    const onNearMissPulse = (payload: NearMissPulsePayload) => {
+      useChaosStore.getState().triggerNearMissPulse(payload.playerId);
+    };
+
     socket.on(ServerEvents.NEAR_MISS, onNearMiss);
+    socket.on(ServerEvents.NEAR_MISS_PULSE, onNearMissPulse);
     socket.on(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
     socket.on(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
     socket.on(ServerEvents.MASHUP_VOTE_RESULT, onMashupVoteResult);
@@ -200,6 +206,7 @@ export function useSocket() {
       socket.off(ServerEvents.TOURNAMENT_STATE, onTournamentState);
       socket.off(ServerEvents.TOURNAMENT_COMPLETE, onTournamentComplete);
       socket.off(ServerEvents.NEAR_MISS, onNearMiss);
+      socket.off(ServerEvents.NEAR_MISS_PULSE, onNearMissPulse);
       socket.off(ServerEvents.SABOTAGE_POWERUP_GRANTED, onSabotageGranted);
       socket.off(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
       socket.off(ServerEvents.MASHUP_VOTE_RESULT, onMashupVoteResult);

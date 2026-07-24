@@ -6,6 +6,7 @@ import { WordPackBuilderPage } from "./routes/WordPackBuilderPage";
 import { AppHeader } from "./components/shared/AppHeader";
 import { DoodleBackground } from "./components/shared/DoodleBackground";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
+import { ReconnectToasts } from "./components/shared/ReconnectToasts";
 
 export function App() {
   useSocket();
@@ -16,6 +17,7 @@ export function App() {
         <div className="relative h-dvh w-full">
           <DoodleBackground />
           <AppHeader />
+          <ReconnectToasts />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/room/:code" element={<RoomPage />} />

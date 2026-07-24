@@ -70,6 +70,11 @@ export interface WordChoosePayload {
 export interface TurnStartPayload {
   turn: TurnState; // `word` is stripped server-side for everyone but the drawer
   drawTimeSec: number;
+  // This round's connected drawer rotation, in order, as player ids —
+  // recomputed by the server at each round boundary (RoomInstance.startTurn).
+  // Lets the client show "who's up next" without reimplementing rotation
+  // logic (team-interleaved order, mid-game joins/leaves) itself.
+  rotationPlayerIds: string[];
 }
 
 export interface TimerTickPayload {
@@ -100,6 +105,10 @@ export interface RoundEndPayload {
   isMashupRound?: boolean;
   mashupVoteOpen?: boolean;
   mashupCandidates?: { playerId: string; playerName: string }[];
+  // >0 when every eligible guesser got the word before time ran out —
+  // ScoreEngine.drawerAllGuessedBonus(), broadcast so the drawer's own
+  // client can show a distinct celebration (see RoundEndOverlay).
+  drawerBonusAwarded: number;
 }
 
 export interface GameEndPayload {
@@ -169,6 +178,12 @@ export interface TournamentCompletePayload {
 export interface NearMissPayload {
   guess: string;
   hint: "one letter off" | "close";
+}
+
+// Sent to the drawer only, alongside the guesser's own private NEAR_MISS —
+// deliberately carries no guess text.
+export interface NearMissPulsePayload {
+  playerId: string;
 }
 
 export type SabotagePowerup = "blur" | "swapGuesses" | "freezePalette";

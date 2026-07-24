@@ -189,7 +189,7 @@ body {
   }
 }
 .guess-celebrate {
-  animation: guess-celebrate 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: guess-celebrate 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
 }
 
 /* "Time's up, you didn't get it" — a small regretful shake, not a bounce. */
@@ -212,7 +212,43 @@ body {
   }
 }
 .miss-shake {
-  animation: miss-shake 0.4s ease-in-out;
+  animation: miss-shake 0.4s ease-in-out backwards;
+}
+
+/* Hint reveal — a quick flip on just the newly-revealed letter in
+   MaskedWordBanner, so a hint reads as an event instead of a layout shift. */
+@keyframes letter-flip {
+  0% {
+    transform: rotateX(90deg) scale(1.2);
+    opacity: 0;
+    color: #4ade80;
+  }
+  60% {
+    transform: rotateX(0deg) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateX(0deg) scale(1);
+  }
+}
+.letter-flip {
+  animation: letter-flip 0.4s ease-out;
+}
+
+/* Round-end scoreboard rows — staggered via inline animation-delay so the
+   list reads top-to-bottom instead of popping in as one block. */
+@keyframes round-row-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.round-row-in {
+  animation: round-row-in 0.3s ease-out backwards;
 }
 
 /* Round-end score screen — pops in over the canvas for the brief
@@ -229,6 +265,42 @@ body {
 }
 .round-end-pop {
   animation: round-end-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Drawer-only "someone's close" heat pulse on a PlayerList row — no text,
+   just a warm glow so the drawer feels the room without a leaked hint. */
+@keyframes near-miss-heat {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0);
+  }
+  30% {
+    box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0);
+  }
+}
+.near-miss-heat {
+  animation: near-miss-heat 0.9s ease-out;
+}
+
+/* Score delta ticker — a "+N" that flies up off a PlayerList row and fades,
+   on top of the existing .score-pop bump on the number itself. */
+@keyframes score-fly-up {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-22px);
+    opacity: 0;
+  }
+}
+.score-fly-up {
+  animation: score-fly-up 0.9s ease-out forwards;
 }
 
 /* Player join/leave list transitions. */

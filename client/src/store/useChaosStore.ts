@@ -10,9 +10,14 @@ interface ActiveEffect {
 interface ChaosStoreState {
   pendingPowerup: SabotagePowerup | null; // granted to me, not yet used
   activeEffect: ActiveEffect | null; // currently applied to me
+  // Drawer-only: most recent near-miss pulse (no guess text), keyed by an
+  // incrementing id so PlayerList can retrigger the pulse even if the same
+  // player is the one heating up twice in a row.
+  nearMissPulse: { playerId: string; signal: number } | null;
   setPendingPowerup: (powerup: SabotagePowerup | null) => void;
   applyEffect: (payload: SabotageEffectAppliedPayload) => void;
   clearExpiredEffect: () => void;
+  triggerNearMissPulse: (playerId: string) => void;
   reset: () => void;
 }
 
@@ -23,8 +28,12 @@ interface ChaosStoreState {
 export const useChaosStore = create<ChaosStoreState>((set, get) => ({
   pendingPowerup: null,
   activeEffect: null,
+  nearMissPulse: null,
 
   setPendingPowerup: (powerup) => set({ pendingPowerup: powerup }),
+
+  triggerNearMissPulse: (playerId) =>
+    set((state) => ({ nearMissPulse: { playerId, signal: (state.nearMissPulse?.signal ?? 0) + 1 } })),
 
   applyEffect: (payload) => {
     set({ activeEffect: { effect: payload.effect, expiresAt: Date.now() + payload.durationMs, partnerId: payload.partnerId } });
@@ -40,5 +49,5 @@ export const useChaosStore = create<ChaosStoreState>((set, get) => ({
       state.activeEffect && state.activeEffect.expiresAt <= Date.now() ? { activeEffect: null } : {}
     ),
 
-  reset: () => set({ pendingPowerup: null, activeEffect: null }),
+  reset: () => set({ pendingPowerup: null, activeEffect: null, nearMissPulse: null }),
 }));

@@ -27,9 +27,17 @@ import {
   type MutedPayload,
   type TournamentState,
   type NearMissPayload,
+  type NearMissPulsePayload,
   type SabotagePowerup,
   type SabotageEffectAppliedPayload,
   type MashupVoteResultPayload,
+  type StrokeStartPayload,
+  type StrokePointPayload,
+  type StrokeEndPayload,
+  type DrawFillPayload,
+  type CommittedStrokeOp,
+  type CommittedDrawOp,
+  type DrawSnapshotPayload,
 } from "@pixelpanic/shared";
 import { WordSelector } from "./WordSelector.js";
 import { computeHintSchedule, buildMaskedWord } from "./HintScheduler.js";
@@ -70,6 +78,12 @@ export class RoomInstance implements TournamentHost {
   private wordSelector: WordSelector;
   private rotationAnonIds: string[] = [];
   private currentTurnStrokeIds: string[] = [];
+  // Mirrors the client's own StrokeRenderer.committed (remoteStrokeRenderer.ts)
+  // so a mid-game joiner or reconnecting player can be caught up — see
+  // catchUpNewcomer(). activeStrokeOps holds in-progress (not yet ended)
+  // strokes, same split as the client's `active` map vs `committed` array.
+  private committedOps: CommittedDrawOp[] = [];
+  private activeStrokeOps = new Map<string, CommittedStrokeOp>();
   private revealedIndices = new Set<number>();
   private graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private turnTimeouts: ReturnType<typeof setTimeout>[] = [];
@@ -146,6 +160,7 @@ export class RoomInstance implements TournamentHost {
   join(socket: Socket, name: string, anonId: string, avatarId: string | null = null): RoomJoinResult {
     const existing = this.room.players.find((p) => p.anonId === anonId);
     if (existing) {
+      const wasDisconnected = !existing.connected;
       existing.id = socket.id;
       existing.connected = true;
       existing.name = name;
@@ -153,10 +168,9 @@ export class RoomInstance implements TournamentHost {
       this.cancelGraceTimer(anonId);
       socket.join(this.room.id);
       if (existing.teamId) socket.join(this.teamRoomKey(existing.teamId));
+      if (wasDisconnected) this.pushSystemChat(`${name} reconnected.`);
       this.broadcastRoomState();
-      this.emitTo(existing.id, ServerEvents.GAME_PHASE_CHANGE, {
-        phase: this.game.turn?.phase ?? "lobby",
-      });
+      this.catchUpNewcomer(existing.id);
       return { ok: true, player: existing };
     }
 
@@ -185,7 +199,43 @@ export class RoomInstance implements TournamentHost {
     socket.join(this.room.id);
     this.pushSystemChat(`${name} joined the room.`);
     this.broadcastRoomState();
+    // A brand-new player (not a reconnect) can join a room whose game is
+    // already active — nothing gates ROOM_JOIN on isGameActive, and rotation
+    // is designed to fold mid-game joiners in at the next round boundary
+    // (see CLAUDE.md). Without this, their client would sit stuck on
+    // GAME_PHASE_CHANGE's default "lobby" state, never having received the
+    // TURN_START/SCORE_UPDATE broadcasts that happened before they connected.
+    this.catchUpNewcomer(player.id);
     return { ok: true, player };
+  }
+
+  // Private catch-up for a socket that just joined or reconnected while a
+  // game is already in progress: current phase, the in-progress turn (word
+  // masked exactly like a normal non-drawer would see it — a newcomer is
+  // never the current turn's drawer), current scores, and whatever's been
+  // drawn so far this turn (see committedOps/DRAW_SNAPSHOT).
+  private catchUpNewcomer(playerId: string): void {
+    const turn = this.game.turn;
+    this.emitTo(playerId, ServerEvents.GAME_PHASE_CHANGE, { phase: turn?.phase ?? "lobby" });
+    if (!turn) return;
+
+    this.emitTo(playerId, ServerEvents.TURN_START, {
+      turn: { ...turn, word: turn.isReverseMode ? turn.word : null },
+      drawTimeSec: this.room.settings.drawTimeSec,
+      rotationPlayerIds: this.connectedRotationPlayerIds(),
+    } satisfies TurnStartPayload);
+
+    this.emitTo(playerId, ServerEvents.SCORE_UPDATE, {
+      scoreboard: { ...this.game.scoreboard },
+      teamScoreboard: this.currentTeamScoreboard(),
+      momentum: this.room.settings.chaosModes.momentum ? { ...this.game.momentum } : undefined,
+    } satisfies ScoreUpdatePayload);
+
+    if (turn.phase === "drawing" && this.committedOps.length > 0) {
+      this.emitTo(playerId, ServerEvents.DRAW_SNAPSHOT, {
+        ops: this.committedOps,
+      } satisfies DrawSnapshotPayload);
+    }
   }
 
   handleDisconnect(socketId: string): void {
@@ -490,6 +540,16 @@ export class RoomInstance implements TournamentHost {
     this.broadcast(ServerEvents.TOURNAMENT_COMPLETE, { tournament });
   }
 
+  // rotationAnonIds filtered to currently-connected players and mapped to
+  // player.id — the shape TURN_START hands the client for its turn-order
+  // strip, since anonId is a server-internal identity concept.
+  private connectedRotationPlayerIds(): string[] {
+    return this.rotationAnonIds
+      .map((anonId) => this.room.players.find((p) => p.anonId === anonId && p.connected))
+      .filter((p): p is Player => !!p)
+      .map((p) => p.id);
+  }
+
   private startTurn(indices: { roundIndex: number; turnIndexInRound: number }): void {
     this.clearTurnTimers();
     // Votekick tallies don't carry across turns.
@@ -581,25 +641,29 @@ export class RoomInstance implements TournamentHost {
     turn.phase = "drawing";
     turn.turnEndsAt = Date.now() + drawTimeSec * 1000;
 
+    const rotationPlayerIds = this.connectedRotationPlayerIds();
     if (turn.isReverseMode) {
       // Reverse mode: everyone EXCEPT the drawer sees the real word — the
       // drawer has to draw/guess from the room's reactions instead. The
       // drawer's own targeted emit (sent second, so it wins for their
       // socket — same last-write-wins trick the normal path below relies
       // on) is the only one that gets the masked version.
-      this.broadcast(ServerEvents.TURN_START, { turn, drawTimeSec } satisfies TurnStartPayload);
+      this.broadcast(ServerEvents.TURN_START, { turn, drawTimeSec, rotationPlayerIds } satisfies TurnStartPayload);
       this.emitTo(turn.drawerId, ServerEvents.TURN_START, {
         turn: { ...turn, word: null },
         drawTimeSec,
+        rotationPlayerIds,
       } satisfies TurnStartPayload);
     } else {
       this.broadcast(ServerEvents.TURN_START, {
         turn: { ...turn, word: null },
         drawTimeSec,
+        rotationPlayerIds,
       } satisfies TurnStartPayload);
       this.emitTo(turn.drawerId, ServerEvents.TURN_START, {
         turn,
         drawTimeSec,
+        rotationPlayerIds,
       } satisfies TurnStartPayload);
     }
 
@@ -654,6 +718,7 @@ export class RoomInstance implements TournamentHost {
     }
 
     const connectedGuessers = this.eligibleGuessers(turn.drawerId);
+    let drawerBonusAwarded = 0;
     if (
       !turn.isReverseMode &&
       connectedGuessers.length > 0 &&
@@ -661,7 +726,8 @@ export class RoomInstance implements TournamentHost {
     ) {
       const drawer = this.room.players.find((p) => p.id === turn.drawerId);
       if (drawer) {
-        drawer.score += ScoreEngine.drawerAllGuessedBonus();
+        drawerBonusAwarded = ScoreEngine.drawerAllGuessedBonus();
+        drawer.score += drawerBonusAwarded;
         this.game.scoreboard[drawer.id] = drawer.score;
       }
     }
@@ -695,6 +761,7 @@ export class RoomInstance implements TournamentHost {
       isMashupRound: turn.isMashupRound,
       mashupVoteOpen: turn.mashupVoteOpen,
       mashupCandidates: turn.mashupVoteOpen ? [...this.mashupCandidateByAnon.values()] : undefined,
+      drawerBonusAwarded,
     } satisfies RoundEndPayload);
 
     if (turn.mashupVoteOpen) {
@@ -881,6 +948,11 @@ export class RoomInstance implements TournamentHost {
           guess: trimmed,
           hint: trimmed.length === turn.wordLength ? "one letter off" : "close",
         } satisfies NearMissPayload);
+        if (turn.drawerId !== player.id) {
+          this.emitTo(turn.drawerId, ServerEvents.NEAR_MISS_PULSE, {
+            playerId: player.id,
+          } satisfies NearMissPulsePayload);
+        }
       }
     }
 
@@ -1065,33 +1137,50 @@ export class RoomInstance implements TournamentHost {
     return this.game.turn?.phase === "drawing" && this.game.turn.drawerId === socketId;
   }
 
-  relayStrokeStart(socketId: string, payload: unknown): void {
+  relayStrokeStart(socketId: string, payload: StrokeStartPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
+    this.activeStrokeOps.set(payload.strokeId, {
+      kind: "stroke",
+      strokeId: payload.strokeId,
+      tool: payload.tool,
+      color: payload.color,
+      size: payload.size,
+      points: [payload.point],
+    });
     this.broadcast(ServerEvents.DRAW_STROKE_START, payload);
   }
 
-  relayStrokePoint(socketId: string, payload: unknown): void {
+  relayStrokePoint(socketId: string, payload: StrokePointPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
+    this.activeStrokeOps.get(payload.strokeId)?.points.push(...payload.points);
     this.broadcast(ServerEvents.DRAW_STROKE_POINT, payload);
   }
 
-  relayStrokeEnd(socketId: string, payload: { strokeId: string }): void {
+  relayStrokeEnd(socketId: string, payload: StrokeEndPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
     this.currentTurnStrokeIds.push(payload.strokeId);
+    const op = this.activeStrokeOps.get(payload.strokeId);
+    if (op) {
+      this.committedOps.push(op);
+      this.activeStrokeOps.delete(payload.strokeId);
+    }
     this.broadcast(ServerEvents.DRAW_STROKE_END, payload);
   }
 
   // A fill is a single instant op (no start/point/end sequence) — slot its
   // id into the same undo history as strokes so DRAW_UNDO can remove either.
-  relayFill(socketId: string, payload: { strokeId: string }): void {
+  relayFill(socketId: string, payload: DrawFillPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
     this.currentTurnStrokeIds.push(payload.strokeId);
+    this.committedOps.push({ kind: "fill", strokeId: payload.strokeId, point: payload.point, color: payload.color });
     this.broadcast(ServerEvents.DRAW_FILL, payload);
   }
 
   relayClear(socketId: string): void {
     if (!this.isCurrentDrawer(socketId)) return;
     this.currentTurnStrokeIds = [];
+    this.committedOps = [];
+    this.activeStrokeOps.clear();
     this.broadcast(ServerEvents.DRAW_CLEAR, {});
   }
 
@@ -1099,6 +1188,7 @@ export class RoomInstance implements TournamentHost {
     if (!this.isCurrentDrawer(socketId)) return;
     const strokeId = this.currentTurnStrokeIds.pop();
     if (!strokeId) return;
+    this.committedOps = this.committedOps.filter((op) => op.strokeId !== strokeId);
     this.broadcast(ServerEvents.DRAW_UNDO, { strokeId });
   }
 

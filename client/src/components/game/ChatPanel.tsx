@@ -17,15 +17,44 @@ export function ChatPanel() {
   const [channel, setChannel] = useState<ChatChannel>("room");
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPinnedToBottom, setIsPinnedToBottom] = useState(true);
+  const [unseenCount, setUnseenCount] = useState(0);
 
   const activeChannel = isTeamMode ? channel : "room";
   const visibleMessages = messages.filter((m) =>
     activeChannel === "team" ? m.channel === "team" && m.teamId === myTeamId : m.channel !== "team"
   );
 
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    bottomRef.current?.scrollIntoView({ block: "end", behavior });
+    setUnseenCount(0);
+  };
+
+  // Only auto-scroll when the user was already at (or near) the bottom —
+  // otherwise a fast-moving guess feed yanks them away mid-read. If they've
+  // scrolled up, new messages just bump a "jump to latest" pill instead.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [visibleMessages.length]);
+    if (isPinnedToBottom) {
+      bottomRef.current?.scrollIntoView({ block: "end" });
+    } else {
+      setUnseenCount((n) => n + 1);
+    }
+  }, [visibleMessages.length, isPinnedToBottom]);
+
+  // Switching channels (room/team) should always land at the bottom of that
+  // channel's own history, not carry over the other channel's scroll state.
+  useEffect(() => {
+    scrollToBottom("auto");
+  }, [activeChannel]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    setIsPinnedToBottom(nearBottom);
+    if (nearBottom) setUnseenCount(0);
+  };
 
   const submit = () => {
     if (!text.trim()) return;
@@ -60,7 +89,12 @@ export function ChatPanel() {
           </div>
         )}
       </div>
-      <div className="custom-scrollbar flex-1 overflow-y-auto p-3 flex flex-col gap-2 text-sm">
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="custom-scrollbar h-full overflow-y-auto p-3 flex flex-col gap-2 text-sm"
+        >
         {visibleMessages.map((m) => {
           if (m.kind === "system") {
             return (
@@ -103,6 +137,16 @@ export function ChatPanel() {
           );
         })}
         <div ref={bottomRef} />
+        </div>
+        {!isPinnedToBottom && (
+          <button
+            onClick={() => scrollToBottom()}
+            className="round-row-in absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-secondary px-3 py-1 font-mono text-[11px] font-bold text-on-secondary shadow-lg"
+          >
+            <Icon name="arrow_downward" className="!text-sm" />
+            {unseenCount > 0 ? `${unseenCount} new` : "Jump to latest"}
+          </button>
+        )}
       </div>
       <div className="border-t border-white/5 p-3">
         <div className="relative">

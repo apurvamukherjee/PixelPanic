@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ClientEvents,
   ServerEvents,
@@ -7,6 +7,7 @@ import {
   type StrokeEndPayload,
   type DrawFillPayload,
   type DrawUndoPayload,
+  type DrawSnapshotPayload,
 } from "@pixelpanic/shared";
 import { useConnectionStore } from "../../store/useConnectionStore";
 import { useGameStore } from "../../store/useGameStore";
@@ -16,21 +17,35 @@ import { useChaosStore } from "../../store/useChaosStore";
 import { attachStrokeCapture } from "../../canvas/strokeCapture";
 import { StrokeRenderer } from "../../canvas/remoteStrokeRenderer";
 
-// The drawer's own strokes are rendered purely from the server's echoed
-// broadcast (io.to(room).emit includes the sender), not drawn locally first —
-// one source of truth, avoids double-render/drift bugs between local and
-// remote rendering paths.
+// The drawer's own strokes render locally the instant local pointer input
+// arrives (see the stroke-capture effect below) — waiting on the server's
+// echoed broadcast for your *own* pen was fine on localhost (~0ms RTT) but
+// reads as real input lag once deployed (RTT is real). Everyone else's
+// strokes still render purely from the echo, same as always — only the
+// local drawer's own in-progress strokeIds (localStrokeIds) are ever
+// rendered from local input, and the echo for those specific ids is then
+// ignored (see the DRAW_STROKE_* handlers below) so nothing double-applies.
 export function DrawingCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const committedRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<StrokeRenderer | null>(null);
+  // strokeIds currently (or just) rendered from local input rather than the
+  // server echo — see the module comment above.
+  const localStrokeIdsRef = useRef<Set<string>>(new Set());
 
   const socket = useConnectionStore((s) => s.socket);
   const mySocketId = useRoomStore((s) => s.mySocketId);
   const drawerId = useGameStore((s) => s.turn?.drawerId ?? null);
   const isDrawer = drawerId !== null && drawerId === mySocketId;
+  const drawPhase = useGameStore((s) => s.turn?.phase ?? null);
+  const turnKey = useGameStore((s) => (s.turn ? `${s.turn.roundIndex}-${s.turn.turnIndexInRound}` : null));
   const curseWordsOn = useRoomStore((s) => s.room?.settings.chaosModes.curseWords ?? false);
+  // Ghost "start drawing…" nudge for a blank canvas — cleared on the first
+  // stroke/fill and reset each new turn (keyed the same way MaskedWordBanner
+  // keys its own turn-boundary remount).
+  const [hasMarkedCanvas, setHasMarkedCanvas] = useState(false);
+  useEffect(() => setHasMarkedCanvas(false), [turnKey]);
   const blurActive = useChaosStore(
     (s) => s.activeEffect?.effect === "blur" && s.activeEffect.expiresAt > Date.now()
   );
@@ -38,6 +53,14 @@ export function DrawingCanvas() {
   // skipped locally while strokes still broadcast normally, so everyone
   // else sees the drawing in real time.
   const hideOwnCanvas = curseWordsOn && isDrawer;
+
+  // Shared by both the local-input and echo-listener effects below — reads
+  // live state at call time rather than closing over a render-time boolean.
+  const shouldHideForMe = () => {
+    const { room, mySocketId } = useRoomStore.getState();
+    const drawerId = useGameStore.getState().turn?.drawerId ?? null;
+    return (room?.settings.chaosModes.curseWords ?? false) && drawerId !== null && drawerId === mySocketId;
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -74,22 +97,32 @@ export function DrawingCanvas() {
 
   useEffect(() => {
     if (!socket) return;
-    // Curse words mode: skip rendering the drawer's own strokes on their own
-    // canvas (strokes still broadcast normally, so everyone else renders
-    // them fine) — read live state at call time rather than closing over a
-    // render-time boolean, since this effect only re-subscribes on socket
-    // change.
-    const shouldHideForMe = () => {
-      const { room, mySocketId } = useRoomStore.getState();
-      const drawerId = useGameStore.getState().turn?.drawerId ?? null;
-      return (room?.settings.chaosModes.curseWords ?? false) && drawerId !== null && drawerId === mySocketId;
+    // Own strokeIds already rendered from local input (see the stroke-
+    // capture effect below) — their start/point echoes are pure no-ops.
+    // The id is only removed from tracking at end/fill (a stroke's own
+    // echo always arrives exactly once each), so it can't be dropped
+    // mid-stroke by an earlier check and wrongly stop being skipped.
+    const isMine = (strokeId: string) => localStrokeIdsRef.current.has(strokeId);
+
+    const onStart = (p: StrokeStartPayload) => !isMine(p.strokeId) && !shouldHideForMe() && rendererRef.current?.handleStart(p);
+    const onPoints = (p: StrokePointPayload) => !isMine(p.strokeId) && !shouldHideForMe() && rendererRef.current?.handlePoints(p);
+    const onEnd = (p: StrokeEndPayload) => {
+      const mine = localStrokeIdsRef.current.delete(p.strokeId);
+      if (!mine && !shouldHideForMe()) rendererRef.current?.handleEnd(p);
     };
-    const onStart = (p: StrokeStartPayload) => !shouldHideForMe() && rendererRef.current?.handleStart(p);
-    const onPoints = (p: StrokePointPayload) => !shouldHideForMe() && rendererRef.current?.handlePoints(p);
-    const onEnd = (p: StrokeEndPayload) => !shouldHideForMe() && rendererRef.current?.handleEnd(p);
-    const onFill = (p: DrawFillPayload) => !shouldHideForMe() && rendererRef.current?.handleFill(p);
-    const onClear = () => rendererRef.current?.handleClear();
+    const onFill = (p: DrawFillPayload) => {
+      const mine = localStrokeIdsRef.current.delete(p.strokeId);
+      if (!mine && !shouldHideForMe()) rendererRef.current?.handleFill(p);
+    };
+    const onClear = () => {
+      rendererRef.current?.handleClear();
+      setHasMarkedCanvas(false);
+    };
     const onUndo = (p: DrawUndoPayload) => !shouldHideForMe() && rendererRef.current?.handleUndo(p.strokeId);
+    // Private catch-up emit for a mid-game joiner/reconnect — see
+    // RoomInstance.catchUpNewcomer. Never fires for the current drawer (they
+    // have nothing to catch up on), so no shouldHideForMe() gate needed.
+    const onSnapshot = (p: DrawSnapshotPayload) => rendererRef.current?.handleSnapshot(p.ops);
 
     socket.on(ServerEvents.DRAW_STROKE_START, onStart);
     socket.on(ServerEvents.DRAW_STROKE_POINT, onPoints);
@@ -97,6 +130,7 @@ export function DrawingCanvas() {
     socket.on(ServerEvents.DRAW_FILL, onFill);
     socket.on(ServerEvents.DRAW_CLEAR, onClear);
     socket.on(ServerEvents.DRAW_UNDO, onUndo);
+    socket.on(ServerEvents.DRAW_SNAPSHOT, onSnapshot);
 
     return () => {
       socket.off(ServerEvents.DRAW_STROKE_START, onStart);
@@ -105,6 +139,7 @@ export function DrawingCanvas() {
       socket.off(ServerEvents.DRAW_FILL, onFill);
       socket.off(ServerEvents.DRAW_CLEAR, onClear);
       socket.off(ServerEvents.DRAW_UNDO, onUndo);
+      socket.off(ServerEvents.DRAW_SNAPSHOT, onSnapshot);
     };
   }, [socket]);
 
@@ -118,15 +153,28 @@ export function DrawingCanvas() {
       getColor: () => useDrawingStore.getState().color,
       getSize: () => useDrawingStore.getState().size,
       onStart: (strokeId, tool, color, size, point) => {
-        socket.emit(ClientEvents.DRAW_STROKE_START, { strokeId, tool, color, size, point });
+        setHasMarkedCanvas(true);
+        const payload = { strokeId, tool, color, size, point };
+        if (!shouldHideForMe()) {
+          localStrokeIdsRef.current.add(strokeId);
+          rendererRef.current?.handleStart(payload);
+        }
+        socket.emit(ClientEvents.DRAW_STROKE_START, payload);
       },
       onPoints: (strokeId, points) => {
+        if (localStrokeIdsRef.current.has(strokeId)) rendererRef.current?.handlePoints({ strokeId, points });
         socket.emit(ClientEvents.DRAW_STROKE_POINT, { strokeId, points });
       },
       onEnd: (strokeId) => {
+        if (localStrokeIdsRef.current.has(strokeId)) rendererRef.current?.handleEnd({ strokeId });
         socket.emit(ClientEvents.DRAW_STROKE_END, { strokeId });
       },
       onFill: (opId, point, color) => {
+        setHasMarkedCanvas(true);
+        if (!shouldHideForMe()) {
+          localStrokeIdsRef.current.add(opId);
+          rendererRef.current?.handleFill({ strokeId: opId, point, color });
+        }
         socket.emit(ClientEvents.DRAW_FILL, { strokeId: opId, point, color });
       },
     });
@@ -156,6 +204,13 @@ export function DrawingCanvas() {
         <div className="absolute inset-0 flex items-center justify-center bg-surface-container-highest p-4 text-center">
           <span className="font-display text-sm font-bold uppercase tracking-wide text-tertiary">
             Curse words: you're drawing blind! Everyone else can see it.
+          </span>
+        </div>
+      )}
+      {isDrawer && drawPhase === "drawing" && !hasMarkedCanvas && !hideOwnCanvas && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-300">
+          <span className="font-display text-sm font-medium uppercase tracking-wide text-black/25">
+            Start drawing…
           </span>
         </div>
       )}

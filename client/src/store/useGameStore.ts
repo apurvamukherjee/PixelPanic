@@ -24,6 +24,16 @@ interface GameState {
   // Private GUESS_CORRECT only reaches the guesser, so this is the only way
   // the client itself knows "did I get it this turn" — reset each TURN_START.
   iGuessedThisTurn: boolean;
+  // This round's drawer order, from the server (see TurnStartPayload) —
+  // recomputing this client-side would mean reimplementing team-interleaved
+  // rotation and connected-player filtering.
+  rotationPlayerIds: string[];
+  // HINT_REVEAL sends the full cumulative revealed-index set each time, not
+  // just the new one — revealedIndices is that set, justRevealedIndex is the
+  // diff against the previous one, so MaskedWordBanner can animate only the
+  // newly-revealed letter.
+  revealedIndices: number[];
+  justRevealedIndex: number | null;
 
   applyPhaseChange: (phase: GamePhase) => void;
   applyWordChoices: (payload: WordChoicesPayload) => void;
@@ -49,6 +59,9 @@ export const useGameStore = create<GameState>((set) => ({
   finalScoreboard: null,
   clockOffsetMs: 0,
   iGuessedThisTurn: false,
+  rotationPlayerIds: [],
+  revealedIndices: [],
+  justRevealedIndex: null,
 
   applyPhaseChange: (phase) => set({ phase }),
 
@@ -61,6 +74,9 @@ export const useGameStore = create<GameState>((set) => ({
       wordChoices: null,
       lastRoundEnd: null,
       iGuessedThisTurn: false,
+      rotationPlayerIds: payload.rotationPlayerIds,
+      revealedIndices: [],
+      justRevealedIndex: null,
     }),
 
   applyTimerTick: (turnEndsAt, serverNow) =>
@@ -70,11 +86,16 @@ export const useGameStore = create<GameState>((set) => ({
     })),
 
   applyHintReveal: (payload) =>
-    set((state) =>
-      state.turn
-        ? { turn: { ...state.turn, maskedWord: payload.maskedWord } }
-        : {}
-    ),
+    set((state) => {
+      if (!state.turn) return {};
+      const prev = new Set(state.revealedIndices);
+      const justRevealedIndex = payload.revealedIndices.find((i) => !prev.has(i)) ?? null;
+      return {
+        turn: { ...state.turn, maskedWord: payload.maskedWord },
+        revealedIndices: payload.revealedIndices,
+        justRevealedIndex,
+      };
+    }),
 
   applyScoreUpdate: (payload) =>
     set((state) => ({
@@ -115,5 +136,8 @@ export const useGameStore = create<GameState>((set) => ({
       finalScoreboard: null,
       clockOffsetMs: 0,
       iGuessedThisTurn: false,
+      rotationPlayerIds: [],
+      revealedIndices: [],
+      justRevealedIndex: null,
     }),
 }));

@@ -3,6 +3,41 @@ import { useRoomStore } from "../../store/useRoomStore";
 import { CountdownBar } from "../shared/CountdownBar";
 import { Icon } from "../shared/Icon";
 
+// buildMaskedWord (server, HintScheduler.ts) joins one array entry per
+// original word index with " " — so original word index `i` always lands at
+// rendered string position `2*i`. That's what lets justRevealedIndex (an
+// original-word index) target the right character span to flip, without the
+// client needing to know the real word to compute it.
+function MaskedWordDisplay({
+  iKnowTheWord,
+  word,
+  maskedWord,
+}: {
+  iKnowTheWord: boolean;
+  word: string | null;
+  maskedWord: string;
+}) {
+  const justRevealedIndex = useGameStore((s) => s.justRevealedIndex);
+  const display = iKnowTheWord && word ? word.toUpperCase() : maskedWord;
+
+  return (
+    <div
+      data-testid="masked-word"
+      className={`text-center font-display text-2xl font-extrabold tracking-[0.25em] ${
+        iKnowTheWord ? "text-primary" : "text-on-surface"
+      }`}
+    >
+      {iKnowTheWord
+        ? display
+        : display.split("").map((ch, i) => (
+            <span key={i} className={i === (justRevealedIndex ?? -1) * 2 ? "letter-flip inline-block" : "inline-block"}>
+              {ch}
+            </span>
+          ))}
+    </div>
+  );
+}
+
 export function MaskedWordBanner() {
   const turn = useGameStore((s) => s.turn);
   const mySocketId = useRoomStore((s) => s.mySocketId);
@@ -44,14 +79,7 @@ export function MaskedWordBanner() {
           {turn.isReverseMode ? "You're guessing this turn" : "You are drawing"}
         </div>
       )}
-      <div
-        data-testid="masked-word"
-        className={`text-center font-display text-2xl font-extrabold tracking-[0.25em] ${
-          iKnowTheWord ? "text-primary" : "text-on-surface"
-        }`}
-      >
-        {iKnowTheWord && turn.word ? turn.word.toUpperCase() : turn.maskedWord}
-      </div>
+      <MaskedWordDisplay iKnowTheWord={iKnowTheWord} word={turn.word} maskedWord={turn.maskedWord} />
       <CountdownBar totalSec={drawTimeSec} />
     </div>
   );

@@ -121,10 +121,17 @@ to know:
   wrapping to 0), not frozen once at game start — this is what naturally
   folds in mid-game joiners and drops permanently-left players without a
   separate waiting-queue data structure.
-- **`io.to(room).emit(...)` includes the sender.** The drawer's own strokes
-  are rendered purely from the echoed broadcast, not drawn locally first —
-  one source of truth for canvas rendering, avoids double-render/drift bugs.
-  Don't add a separate "local optimistic stroke" rendering path.
+- **`io.to(room).emit(...)` includes the sender.** Everyone *except* the
+  local drawer still renders purely from that echoed broadcast — one source
+  of truth for their canvases. The drawer's own in-progress stroke is the
+  one deliberate exception (`DrawingCanvas.tsx`): it renders immediately
+  from local pointer input instead of waiting on the round-trip, because on
+  a deployed server that round-trip is real latency that reads as input lag
+  (invisible on localhost, where RTT ≈ 0). `localStrokeIdsRef` tracks which
+  strokeIds were rendered locally so their own echo is a no-op (checked, not
+  re-applied) — that's what prevents double-render/drift. If you touch this
+  path, keep that invariant: a strokeId is rendered from exactly one source,
+  local input for the drawer's own pen, the echo for everything else.
 
 ## Known bug fixed during Phase 1 verification
 

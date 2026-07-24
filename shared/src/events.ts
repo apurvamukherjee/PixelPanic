@@ -41,6 +41,8 @@ export const ServerEvents = {
   DRAW_FILL: "draw:fill",
   DRAW_CLEAR: "draw:clear",
   DRAW_UNDO: "draw:undo",
+  // Private catch-up emit — see DrawSnapshotPayload.
+  DRAW_SNAPSHOT: "draw:snapshot",
   CHAT_MESSAGE: "chat:message",
   GUESS_CORRECT: "guess:correct",
   SCORE_UPDATE: "score:update",
@@ -53,6 +55,9 @@ export const ServerEvents = {
   TOURNAMENT_COMPLETE: "tournament:complete",
   // Phase 3 — chaos modes
   NEAR_MISS: "chaos:nearMiss",
+  // Drawer-only "someone's close" signal — no guess text, just a pulse so
+  // the drawer can feel the room without a guesser's private hint leaking.
+  NEAR_MISS_PULSE: "chaos:nearMissPulse",
   SABOTAGE_POWERUP_GRANTED: "sabotage:powerupGranted",
   SABOTAGE_EFFECT_APPLIED: "sabotage:effectApplied",
   MASHUP_VOTE_RESULT: "mashup:voteResult",

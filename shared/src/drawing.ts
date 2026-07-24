@@ -49,3 +49,28 @@ export interface DrawUndoRequestPayload {}
 export interface DrawUndoPayload {
   strokeId: string;
 }
+
+// Server -> a single newly-(re)connected client only: the current turn's
+// committed strokes/fills so far, in performed order, so a mid-game joiner
+// or a reconnecting player sees the drawing already in progress instead of
+// a blank canvas until the next turn's DRAW_CLEAR. Mirrors the shape the
+// client's own StrokeRenderer already tracks internally (remoteStrokeRenderer.ts).
+export interface CommittedStrokeOp {
+  kind: "stroke";
+  strokeId: string;
+  tool: DrawTool;
+  color: string;
+  size: number;
+  points: StrokePoint[];
+}
+export interface CommittedFillOp {
+  kind: "fill";
+  strokeId: string;
+  point: StrokePoint;
+  color: string;
+}
+export type CommittedDrawOp = CommittedStrokeOp | CommittedFillOp;
+
+export interface DrawSnapshotPayload {
+  ops: CommittedDrawOp[];
+}

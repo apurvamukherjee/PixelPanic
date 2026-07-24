@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { ClientEvents, type Player } from "@pixelpanic/shared";
 import { useRoomStore } from "../../store/useRoomStore";
 import { useGameStore } from "../../store/useGameStore";
@@ -13,6 +14,7 @@ function PlayerRow({
   isHost,
   isDrawer,
   streak,
+  heatSignal,
 }: {
   p: Player;
   score: number;
@@ -20,9 +22,33 @@ function PlayerRow({
   isHost: boolean;
   isDrawer: boolean;
   streak: number;
+  heatSignal: number;
 }) {
   const socket = useConnectionStore((s) => s.socket);
   const pendingPowerup = useChaosStore((s) => s.pendingPowerup);
+  const [heating, setHeating] = useState(false);
+
+  useEffect(() => {
+    if (heatSignal === 0) return;
+    setHeating(true);
+    const t = setTimeout(() => setHeating(false), 900);
+    return () => clearTimeout(t);
+  }, [heatSignal]);
+
+  // "+N" flyup on top of the existing .score-pop bump — skips the initial
+  // mount (prevScoreRef starts equal to score) so joining mid-game doesn't
+  // show a flyup for a score you already had.
+  const prevScoreRef = useRef(score);
+  const [flyup, setFlyup] = useState<{ value: number; key: number } | null>(null);
+  useEffect(() => {
+    const diff = score - prevScoreRef.current;
+    prevScoreRef.current = score;
+    if (diff > 0) {
+      setFlyup({ value: diff, key: Date.now() });
+      const t = setTimeout(() => setFlyup(null), 900);
+      return () => clearTimeout(t);
+    }
+  }, [score]);
 
   const useSabotageOnTarget = () => {
     if (!pendingPowerup) return;
@@ -34,7 +60,7 @@ function PlayerRow({
     <li
       className={`player-join flex items-center gap-2 rounded-xl border px-2 py-2 ${
         isDrawer ? "border-primary/30 bg-primary/10" : "border-white/5 bg-surface-container-high/50"
-      } ${!p.connected ? "opacity-60" : ""}`}
+      } ${!p.connected ? "opacity-60" : ""} ${heating ? "near-miss-heat" : ""}`}
     >
       <Avatar
         name={p.name}
@@ -60,7 +86,17 @@ function PlayerRow({
           <Icon name="local_fire_department" className="!text-xs" filled /> {streak}
         </span>
       )}
-      <span key={score} className="score-pop ml-auto font-mono text-sm text-on-surface-variant">{score}</span>
+      <span className="relative ml-auto">
+        <span key={score} className="score-pop font-mono text-sm text-on-surface-variant">{score}</span>
+        {flyup && (
+          <span
+            key={flyup.key}
+            className="score-fly-up pointer-events-none absolute right-0 -top-1 font-mono text-xs font-bold text-success"
+          >
+            +{flyup.value}
+          </span>
+        )}
+      </span>
       {!isMe && (
         <div className="flex gap-1">
           {pendingPowerup && (
@@ -102,10 +138,14 @@ export function PlayerList() {
   const teamScoreboard = useGameStore((s) => s.teamScoreboard);
   const momentum = useGameStore((s) => s.momentum);
   const drawerId = useGameStore((s) => s.turn?.drawerId ?? null);
+  const nearMissPulse = useChaosStore((s) => s.nearMissPulse);
   if (!room) return null;
 
   const scoreOf = (p: Player) => scoreboard[p.id] ?? p.score;
   const streakOf = (p: Player) => momentum[p.anonId] ?? 0;
+  // Only ever non-zero on the drawer's own client — NEAR_MISS_PULSE is a
+  // private emit that non-drawers never receive in the first place.
+  const heatSignalOf = (p: Player) => (nearMissPulse?.playerId === p.id ? nearMissPulse.signal : 0);
   const heading = "font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/60 px-1";
 
   if (room.settings.mode === "team" && room.teams.length > 0) {
@@ -138,6 +178,7 @@ export function PlayerList() {
                     isHost={isHost}
                     isDrawer={p.id === drawerId}
                     streak={streakOf(p)}
+                    heatSignal={heatSignalOf(p)}
                   />
                 ))}
               </ul>
@@ -157,6 +198,7 @@ export function PlayerList() {
                   isHost={isHost}
                   isDrawer={p.id === drawerId}
                   streak={streakOf(p)}
+                  heatSignal={heatSignalOf(p)}
                 />
               ))}
             </ul>
@@ -180,6 +222,7 @@ export function PlayerList() {
             isHost={isHost}
             isDrawer={p.id === drawerId}
             streak={streakOf(p)}
+            heatSignal={heatSignalOf(p)}
           />
         ))}
       </ul>

@@ -5,6 +5,7 @@ import type {
   StrokePointPayload,
   StrokeEndPayload,
   DrawFillPayload,
+  CommittedDrawOp,
 } from "@pixelpanic/shared";
 import { strokeToPath2D } from "./perfectFreehandRender";
 import { floodFill } from "./floodFill";
@@ -79,6 +80,18 @@ export class StrokeRenderer {
   handleFill(payload: DrawFillPayload): void {
     this.committed.push({ kind: "fill", id: payload.strokeId, point: payload.point, color: payload.color });
     this.applyFill(this.committedCtx, payload.point, payload.color);
+  }
+
+  // Catch-up for a mid-game joiner/reconnect — see DrawSnapshotPayload.
+  // Ops arrive already-finished (no active/in-progress entries), so this
+  // slots straight into `committed` and replays, same as handleUndo/resize.
+  handleSnapshot(ops: CommittedDrawOp[]): void {
+    this.committed = ops.map((op) =>
+      op.kind === "stroke"
+        ? { kind: "stroke", id: op.strokeId, tool: op.tool, color: op.color, size: op.size, points: op.points }
+        : { kind: "fill", id: op.strokeId, point: op.point, color: op.color }
+    );
+    this.replayCommitted();
   }
 
   handleClear(): void {

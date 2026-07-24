@@ -22,6 +22,8 @@ export function RoundEndOverlay() {
   // Reverse mode narrows real guessing to the nominal drawer (see
   // CLAUDE.md's Phase 3 addendum) — everyone else already knew the word.
   const wasEligibleGuesser = turn?.isReverseMode ? isDrawer : !isDrawer;
+  const showDrawerBonus = isDrawer && !turn?.isReverseMode && lastRoundEnd.drawerBonusAwarded > 0;
+  const hasBadge = wasEligibleGuesser || showDrawerBonus;
 
   const delta = lastRoundEnd.scoreboardDelta;
   const sorted = [...room.players].sort((a, b) => (delta[b.id] ?? 0) - (delta[a.id] ?? 0));
@@ -36,6 +38,7 @@ export function RoundEndOverlay() {
 
         {wasEligibleGuesser && (
           <div
+            style={{ animationDelay: "180ms" }}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 font-display text-sm font-bold ${
               iGuessedThisTurn ? "guess-celebrate bg-success/20 text-success" : "miss-shake bg-error/20 text-error"
             }`}
@@ -45,9 +48,28 @@ export function RoundEndOverlay() {
           </div>
         )}
 
+        {/* The drawer never "guesses," so they get their own distinct
+            celebration for the everyone-guessed-it bonus instead of sharing
+            the guesser badge above. */}
+        {showDrawerBonus && (
+          <div
+            style={{ animationDelay: "180ms" }}
+            className="guess-celebrate flex items-center gap-2 rounded-xl bg-tertiary/20 px-4 py-2 font-display text-sm font-bold text-tertiary"
+          >
+            <Icon name="celebration" filled className="!text-base" />
+            Everyone guessed it! +{lastRoundEnd.drawerBonusAwarded}
+          </div>
+        )}
+
+        {/* Scoreboard reveals top-to-bottom after the word/result land, not
+            all at once — the eye has somewhere to travel each round. */}
         <ul className="flex w-full flex-col gap-1.5">
-          {sorted.slice(0, 6).map((p) => (
-            <li key={p.id} className="flex items-center gap-2 rounded-lg bg-surface-container-high/50 px-2 py-1.5">
+          {sorted.slice(0, 6).map((p, i) => (
+            <li
+              key={p.id}
+              style={{ animationDelay: `${(hasBadge ? 330 : 150) + i * 70}ms` }}
+              className="round-row-in flex items-center gap-2 rounded-lg bg-surface-container-high/50 px-2 py-1.5"
+            >
               <Avatar name={p.name} color={p.color} avatarId={p.avatarId} size={24} />
               <span className="truncate font-display text-sm text-on-surface">{p.name}</span>
               <span className="ml-auto font-mono text-sm text-on-surface-variant">{delta[p.id] ?? 0}</span>

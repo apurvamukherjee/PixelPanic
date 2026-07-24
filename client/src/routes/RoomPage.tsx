@@ -58,50 +58,59 @@ export function RoomPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Desktop: a fixed two-column grid (settings left, player list + start
+  // action pinned right) that fills the viewport with no page-level scroll —
+  // only the settings column scrolls internally if it overflows. Mobile
+  // keeps the simple stacked flow (settings, then players, then actions).
   return (
-    <div className="mx-auto flex h-full max-w-lg flex-col gap-4 overflow-y-auto p-4 pt-8">
-      <div className="glass rounded-2xl p-6 text-center">
-        <div className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
-          Room code
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-3 overflow-y-auto p-3 pt-4 md:grid md:grid-cols-[1fr_300px] md:gap-4 md:overflow-hidden md:p-4">
+      <div className="flex min-h-0 flex-col gap-3 md:overflow-y-auto md:pr-1">
+        <div className="glass rounded-2xl p-6 text-center">
+          <div className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
+            Room code
+          </div>
+          <div
+            data-testid="room-code"
+            className="font-display text-4xl font-extrabold tracking-widest text-primary"
+          >
+            {room.id}
+          </div>
         </div>
-        <div
-          data-testid="room-code"
-          className="font-display text-4xl font-extrabold tracking-widest text-primary"
-        >
-          {room.id}
-        </div>
+
+        <Button variant="secondary" onClick={copyLink}>
+          {copied ? "Link copied!" : "Copy share link"}
+        </Button>
+
+        <HostSettingsPanel />
+        <TeamAssignmentPanel />
       </div>
 
-      <Button variant="secondary" onClick={copyLink}>
-        {copied ? "Link copied!" : "Copy share link"}
-      </Button>
-
-      <HostSettingsPanel />
-      <TeamAssignmentPanel />
-      <WaitingRoomList />
-
-      {isHost && (
-        <div className="flex gap-2">
-          <Button
-            className="flex-1"
-            onClick={() => socket?.emit(ClientEvents.GAME_START)}
-            disabled={room.players.filter((p) => p.connected).length < 2}
-          >
-            Start Game
-          </Button>
-          <Button
-            className="flex-1"
-            variant="secondary"
-            onClick={() => socket?.emit(ClientEvents.TOURNAMENT_START)}
-            disabled={
-              room.players.filter((p) => p.connected).length < 2 ||
-              room.players.filter((p) => p.connected).length > 10
-            }
-          >
-            Start Tournament
-          </Button>
+      <div className="glass flex min-h-0 flex-col gap-3 rounded-2xl p-3 md:h-full">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <WaitingRoomList />
         </div>
-      )}
+
+        {isHost && (
+          <div className="flex shrink-0 flex-col gap-2 border-t border-white/5 pt-3">
+            <Button
+              onClick={() => socket?.emit(ClientEvents.GAME_START)}
+              disabled={room.players.filter((p) => p.connected).length < 2}
+            >
+              Start Game
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => socket?.emit(ClientEvents.TOURNAMENT_START)}
+              disabled={
+                room.players.filter((p) => p.connected).length < 2 ||
+                room.players.filter((p) => p.connected).length > 10
+              }
+            >
+              Start Tournament
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
