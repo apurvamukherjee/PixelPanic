@@ -46,11 +46,17 @@ export function getWordPackDetail(id: string): WordPackDetail | null {
   };
 }
 
-export function listWordPacks(): Pick<WordPack, "id" | "name" | "isBuiltIn">[] {
+export function listWordPacks(): (Pick<WordPack, "id" | "name" | "isBuiltIn"> & { wordCount: number })[] {
   const rows = db
-    .prepare("SELECT id, name, is_built_in FROM word_packs ORDER BY is_built_in DESC, created_at ASC")
-    .all() as { id: string; name: string; is_built_in: number }[];
-  return rows.map((r) => ({ id: r.id, name: r.name, isBuiltIn: r.is_built_in === 1 }));
+    .prepare(
+      `SELECT p.id, p.name, p.is_built_in, COUNT(w.word) AS word_count
+       FROM word_packs p
+       LEFT JOIN word_pack_words w ON w.pack_id = p.id
+       GROUP BY p.id
+       ORDER BY p.is_built_in DESC, p.created_at ASC`
+    )
+    .all() as { id: string; name: string; is_built_in: number; word_count: number }[];
+  return rows.map((r) => ({ id: r.id, name: r.name, isBuiltIn: r.is_built_in === 1, wordCount: r.word_count }));
 }
 
 export function listWordPacksByOwner(ownerAnonId: string): WordPackDetail[] {

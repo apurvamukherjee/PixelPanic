@@ -273,7 +273,7 @@ bearing facts anyone touching this code needs:
   app) and checked in `wordPacksRepo.ts`; built-in packs (`is_built_in = 1`)
   can never be updated or deleted. Per-word `category` and pack
   `ownerAnonId` are exposed only via the separate `WordPackDetail` shape —
-  gameplay code (`WordSelector`, `RoomManager.resolveWordPack`,
+  gameplay code (`WordSelector`, `RoomManager.resolveWordPacks`,
   `WordChoiceOverlay`) still only ever sees the original flat
   `WordPack.words: string[]`.
 - **Design system**: `design/DESIGN.md` (+ mockups) is a reference for
@@ -420,3 +420,16 @@ narrative in HANDOFF.md's latest session section; the load-bearing facts:
   making the create/join effect fire on the *old* room the instant
   `pending` flipped true, before the server's response for the new one
   ever arrived.
+- **Word packs can now be combined for one match.** `RoomSettings.customWordListId:
+  string | null` became `wordPackIds: string[]` (empty = built-in default
+  only); `RoomManager.resolveWordPacks(ids)` merges the selected packs'
+  `.words` arrays into one synthetic `WordPack` (deduped, capped at 5 packs
+  by `RoomInstance.updateSettings`) before handing it to `WordSelector` —
+  gameplay code still only ever sees a flat `WordPack.words: string[]`, so
+  nothing downstream of `resolveWordPacks` had to change. The lobby's word-
+  list `<select>` was replaced by `WordPackPicker.tsx`
+  (`client/src/components/lobby/`): a chip row of what's selected plus a
+  checklist grid grouped built-in/custom, showing each pack's word count and
+  the combined total. `WORD_PACK_CREATE` now appends the newly-created
+  pack's id to the room's existing `wordPackIds` instead of replacing the
+  selection outright.

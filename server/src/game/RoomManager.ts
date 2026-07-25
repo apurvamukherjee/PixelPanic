@@ -51,7 +51,7 @@ export class RoomManager {
       hostSocket,
       hostName,
       hostAnonId,
-      this.resolveWordPack(null),
+      this.resolveWordPacks([]),
       hostAvatarId
     );
     room.setOnClosed(() => {
@@ -147,9 +147,18 @@ export class RoomManager {
     if (anonId) this.markOffline(anonId);
   }
 
-  resolveWordPack(customWordListId: string | null): WordPack {
-    if (!customWordListId) return this.defaultPack;
-    return getWordPack(customWordListId) ?? this.defaultPack;
+  // Merges the word pools of every selected pack into one synthetic WordPack.
+  // Gameplay code (WordSelector, WordChoiceOverlay) only ever sees the flat
+  // `words: string[]` shape, so this is the one place multi-pack selection
+  // has to be understood — everything downstream is unaware packs were
+  // combined at all.
+  resolveWordPacks(wordPackIds: string[]): WordPack {
+    if (wordPackIds.length === 0) return this.defaultPack;
+    const packs = wordPackIds.map((id) => getWordPack(id)).filter((p): p is WordPack => p !== null);
+    if (packs.length === 0) return this.defaultPack;
+    if (packs.length === 1) return packs[0]!;
+    const words = [...new Set(packs.flatMap((p) => p.words))];
+    return { id: packs.map((p) => p.id).join("+"), name: packs.map((p) => p.name).join(" + "), isBuiltIn: false, words };
   }
 
   // Phase 3 rival system: cross-room presence, used only to push

@@ -48,7 +48,7 @@ export interface RoomUpdateSettingsPayload {
   roundCount?: number;
   drawTimeSec?: number;
   hintFrequency?: "off" | "slow" | "normal" | "fast";
-  customWordListId?: string | null;
+  wordPackIds?: string[];
   mode?: RoomMode;
   chaosModes?: Partial<ChaosModes>;
 }

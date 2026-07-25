@@ -381,8 +381,8 @@ export class RoomInstance implements TournamentHost {
     if (patch.hintFrequency !== undefined) {
       this.room.settings.hintFrequency = patch.hintFrequency;
     }
-    if (patch.customWordListId !== undefined) {
-      this.room.settings.customWordListId = patch.customWordListId;
+    if (patch.wordPackIds !== undefined) {
+      this.room.settings.wordPackIds = patch.wordPackIds.slice(0, 5);
     }
     if (patch.chaosModes !== undefined) {
       this.room.settings.chaosModes = {

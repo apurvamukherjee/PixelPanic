@@ -6,7 +6,7 @@ export interface WordPack {
 }
 
 // Builder-only shape (word-pack CRUD screen). Kept separate from WordPack so
-// gameplay code (WordSelector, RoomManager.resolveWordPack, WordChoiceOverlay)
+// gameplay code (WordSelector, RoomManager.resolveWordPacks, WordChoiceOverlay)
 // never has to deal with per-word categories or ownership — zero blast radius
 // on the existing gameplay path.
 export interface WordPackDetailWord {

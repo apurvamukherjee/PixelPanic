@@ -4,6 +4,7 @@ export interface WordPackSummary {
   id: string;
   name: string;
   isBuiltIn: boolean;
+  wordCount: number;
 }
 
 export async function fetchWordPacks(): Promise<WordPackSummary[]> {

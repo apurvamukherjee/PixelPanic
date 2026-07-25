@@ -59,7 +59,7 @@ export interface RoomSettings {
   roundCount: number; // default 3, clamped 1-10 server-side
   drawTimeSec: number; // default 80, clamped 30-180 server-side
   hintFrequency: HintFrequency;
-  customWordListId: string | null; // null = use the built-in default pack
+  wordPackIds: string[]; // empty = use the built-in default pack only; multiple = merged pool
   maxPlayers: number; // fixed 12 in Phase 1
   mode: RoomMode;
   chaosModes: ChaosModes;
@@ -69,7 +69,7 @@ export const DEFAULT_ROOM_SETTINGS: RoomSettings = {
   roundCount: 3,
   drawTimeSec: 80,
   hintFrequency: "normal",
-  customWordListId: null,
+  wordPackIds: [],
   maxPlayers: 12,
   mode: "solo",
   chaosModes: { ...DEFAULT_CHAOS_MODES },

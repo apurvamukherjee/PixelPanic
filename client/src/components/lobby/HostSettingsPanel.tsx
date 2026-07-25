@@ -9,6 +9,7 @@ import { useRoomStore } from "../../store/useRoomStore";
 import { useConnectionStore } from "../../store/useConnectionStore";
 import { fetchWordPacks, type WordPackSummary } from "../../lib/api";
 import { Button } from "../shared/Button";
+import { WordPackPicker } from "./WordPackPicker";
 
 const HINT_OPTIONS: HintFrequency[] = ["off", "slow", "normal", "fast"];
 
@@ -39,7 +40,7 @@ export function HostSettingsPanel() {
 
   useEffect(() => {
     fetchWordPacks().then(setPacks);
-  }, [room?.settings.customWordListId]);
+  }, [room?.settings.wordPackIds]);
 
   if (!room) return null;
 
@@ -141,38 +142,11 @@ export function HostSettingsPanel() {
         </select>
       </label>
 
-      <label className={LABEL}>
-        <span className={SUBLABEL}>Word list</span>
-        <select
-          className={FIELD}
-          value={room.settings.customWordListId ?? ""}
-          onChange={(e) => update({ customWordListId: e.target.value || null })}
-        >
-          <option value="">Classic Mix (default)</option>
-          {packs.filter((p) => p.isBuiltIn && p.id !== "default").length > 0 && (
-            <optgroup label="Built-in packs">
-              {packs
-                .filter((p) => p.isBuiltIn && p.id !== "default")
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-            </optgroup>
-          )}
-          {packs.filter((p) => !p.isBuiltIn).length > 0 && (
-            <optgroup label="Custom lists">
-              {packs
-                .filter((p) => !p.isBuiltIn)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-            </optgroup>
-          )}
-        </select>
-      </label>
+      <WordPackPicker
+        packs={packs}
+        selectedIds={room.settings.wordPackIds}
+        onChange={(ids) => update({ wordPackIds: ids })}
+      />
 
       <div className="flex flex-col gap-2">
         <span className={SUBLABEL}>Chaos modes</span>

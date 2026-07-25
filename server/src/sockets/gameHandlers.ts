@@ -16,7 +16,7 @@ export function registerGameHandlers(socket: Socket, roomManager: RoomManager): 
   socket.on(ClientEvents.GAME_START, () => {
     const room = roomManager.getRoomBySocket(socket);
     if (!room) return;
-    const pack = roomManager.resolveWordPack(room.room.settings.customWordListId);
+    const pack = roomManager.resolveWordPacks(room.room.settings.wordPackIds);
     room.setWordPack(pack);
     room.startGame(socket.id);
   });
@@ -53,7 +53,9 @@ export function registerGameHandlers(socket: Socket, roomManager: RoomManager): 
         words.map((text) => ({ text, category: null })),
         null
       );
-      room.updateSettings(socket.id, { customWordListId: pack.id });
+      room.updateSettings(socket.id, {
+        wordPackIds: [...room.room.settings.wordPackIds, pack.id],
+      });
       callback({ ok: true, id: pack.id, name: pack.name });
     }
   );
