@@ -3,7 +3,14 @@ function normalize(text: string): string {
 }
 
 export function isCorrectGuess(guess: string, word: string): boolean {
-  return normalize(guess) === normalize(word);
+  const g = normalize(guess);
+  const w = normalize(word);
+  if (g === w) return true;
+  // A multi-word answer ("ice cream") should also count when guessed as one
+  // run-together word ("icecream") — the space is an artifact of how the
+  // word pack wrote the answer, not something a guesser should be marked
+  // wrong for leaving out.
+  return g.replace(/ /g, "") === w.replace(/ /g, "");
 }
 
 function levenshtein(a: string, b: string): number {

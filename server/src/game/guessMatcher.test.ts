@@ -17,6 +17,18 @@ describe("isCorrectGuess", () => {
   it("rejects a wrong word", () => {
     expect(isCorrectGuess("apple", "banana")).toBe(false);
   });
+
+  it("matches a multi-word answer guessed with the space omitted", () => {
+    expect(isCorrectGuess("icecream", "ice cream")).toBe(true);
+  });
+
+  it("matches a multi-word answer guessed run-together and uppercase", () => {
+    expect(isCorrectGuess("ICECREAM", "ice cream")).toBe(true);
+  });
+
+  it("still rejects a genuinely different word once spaces are stripped", () => {
+    expect(isCorrectGuess("icecream", "ice creams")).toBe(false);
+  });
 });
 
 describe("isNearMiss", () => {
