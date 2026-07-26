@@ -213,6 +213,16 @@ export function ChatPanel() {
         <div className="relative">
           <input
             data-testid="chat-input"
+            // Mobile keyboards autocorrect/autocapitalize aggressively, and
+            // iOS Safari in particular applies its suggestion right on the
+            // Enter/Return keypress — so a guess typed with correct spelling
+            // can get silently swapped for something else the instant it's
+            // submitted. Guessing is exact-match (see isCorrectGuess), so
+            // that reads as "I spelled it right and it didn't register."
+            autoCorrect="off"
+            autoCapitalize="off"
+            autoComplete="off"
+            spellCheck={false}
             className="w-full rounded-xl border border-white/10 bg-background py-2.5 pl-4 pr-12 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary"
             placeholder={
               activeChannel === "team"

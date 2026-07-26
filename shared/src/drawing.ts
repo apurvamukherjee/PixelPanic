@@ -1,4 +1,12 @@
-export type DrawTool = "pencil" | "brush" | "eraser" | "fill";
+export type DrawTool = "pencil" | "brush" | "eraser" | "fill" | "rect" | "ellipse" | "arrow";
+
+// Shape tools resend their *entire* outline on every animation-frame flush
+// (see client/src/canvas/strokeCapture.ts) rather than appending new points
+// like a freehand stroke — both the client's live renderer and the server's
+// stored op (used for DRAW_SNAPSHOT catch-up) need to know to replace, not
+// push, when a stroke's tool is one of these. Kept here so client and server
+// can't drift on which tools behave this way.
+export const SHAPE_TOOLS: ReadonlySet<DrawTool> = new Set(["rect", "ellipse", "arrow"]);
 
 // Coordinates are normalized 0..1 relative to canvas width/height so a phone
 // in portrait and a desktop browser can render the exact same strokes at

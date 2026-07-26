@@ -41,6 +41,7 @@ import {
   type CommittedDrawOp,
   type DrawSnapshotPayload,
   type RoomClosedPayload,
+  SHAPE_TOOLS,
 } from "@pixelpanic/shared";
 import { WordSelector } from "./WordSelector.js";
 import { computeHintSchedule, buildMaskedWord } from "./HintScheduler.js";
@@ -168,6 +169,7 @@ export class RoomInstance implements TournamentHost {
     if (existing) {
       const wasDisconnected = !existing.connected;
       const wasHost = existing.isHost;
+      const oldId = existing.id;
       existing.id = socket.id;
       existing.connected = true;
       existing.name = name;
@@ -177,6 +179,20 @@ export class RoomInstance implements TournamentHost {
       // leaves their isHost/hostId alone, see there) needs it repointed at
       // their new socket, or every host-only check keys off a dead id.
       if (wasHost) this.room.hostId = existing.id;
+      // Same problem for an in-progress turn: turn.drawerId/correctGuesserIds
+      // also pin socket ids captured at turn-start. If the reconnecting
+      // player is the current drawer, every drawer-only check (isCurrentDrawer,
+      // chooseWord, drawing-permission gates on the client) compares against
+      // the stale id forever and silently locks them out — the toolbar
+      // disappears and their strokes stop reaching anyone. If they'd already
+      // guessed correctly, repoint their entry in correctGuesserIds too so a
+      // second reconnect doesn't let them double-score.
+      const turn = this.game.turn;
+      if (turn) {
+        if (turn.drawerId === oldId) turn.drawerId = existing.id;
+        const guessIdx = turn.correctGuesserIds.indexOf(oldId);
+        if (guessIdx !== -1) turn.correctGuesserIds[guessIdx] = existing.id;
+      }
       this.cancelGraceTimer(anonId);
       socket.join(this.room.id);
       if (existing.teamId) socket.join(this.teamRoomKey(existing.teamId));
@@ -1260,7 +1276,16 @@ export class RoomInstance implements TournamentHost {
 
   relayStrokePoint(socketId: string, payload: StrokePointPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
-    this.activeStrokeOps.get(payload.strokeId)?.points.push(...payload.points);
+    const op = this.activeStrokeOps.get(payload.strokeId);
+    if (op) {
+      // Shape tools (rect/ellipse/arrow) resend their whole outline every
+      // frame instead of appending new points like a freehand stroke — see
+      // SHAPE_TOOLS. Storing them append-wise would corrupt this op's
+      // points for DRAW_SNAPSHOT (a mid-shape reconnect/join would replay
+      // every intermediate drag position concatenated into one scribble).
+      if (SHAPE_TOOLS.has(op.tool)) op.points = payload.points;
+      else op.points.push(...payload.points);
+    }
     this.broadcast(ServerEvents.DRAW_STROKE_POINT, payload);
   }
 

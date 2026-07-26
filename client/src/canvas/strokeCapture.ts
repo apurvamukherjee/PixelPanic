@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import type { DrawTool, StrokePoint } from "@pixelpanic/shared";
+import { SHAPE_TOOLS, type DrawTool, type StrokePoint } from "@pixelpanic/shared";
+import { buildShapeOutline, type ShapeTool } from "./shapeGeometry";
 
 export interface StrokeCaptureCallbacks {
   getTool: () => DrawTool;
@@ -23,6 +24,11 @@ export function attachStrokeCapture(
   let rafHandle: number | null = null;
   let strokeStartTime = 0;
   let drawing = false;
+  // Set for the duration of a shape-tool drag (rect/ellipse/arrow) — the
+  // point the drag started from, and the full outline is recomputed from it
+  // on every move instead of appending like a freehand stroke.
+  let shapeAnchor: StrokePoint | null = null;
+  let activeShapeTool: ShapeTool | null = null;
 
   function toNormalizedPoint(e: PointerEvent): StrokePoint {
     const rect = canvas.getBoundingClientRect();
@@ -50,9 +56,11 @@ export function attachStrokeCapture(
     if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
 
+    const tool = callbacks.getTool();
+
     // Fill is a single instant click, not a dragged stroke — no pointermove
     // tracking, no onEnd.
-    if (callbacks.getTool() === "fill") {
+    if (tool === "fill") {
       strokeStartTime = performance.now();
       callbacks.onFill(uuidv4(), toNormalizedPoint(e), callbacks.getColor());
       return;
@@ -62,28 +70,45 @@ export function attachStrokeCapture(
     drawing = true;
     strokeStartTime = performance.now();
     strokeId = uuidv4();
-    callbacks.onStart(
-      strokeId,
-      callbacks.getTool(),
-      callbacks.getColor(),
-      callbacks.getSize(),
-      toNormalizedPoint(e)
-    );
+    const point = toNormalizedPoint(e);
+    if (SHAPE_TOOLS.has(tool)) {
+      shapeAnchor = point;
+      activeShapeTool = tool as ShapeTool;
+    } else {
+      shapeAnchor = null;
+      activeShapeTool = null;
+    }
+    callbacks.onStart(strokeId, tool, callbacks.getColor(), callbacks.getSize(), point);
   }
 
   function handlePointerMove(e: PointerEvent) {
     if (!drawing || !strokeId) return;
-    buffer.push(toNormalizedPoint(e));
+    const point = toNormalizedPoint(e);
+    if (activeShapeTool && shapeAnchor) {
+      // Replace, don't accumulate — the whole outline is recomputed from
+      // the anchor each frame (see remoteStrokeRenderer.ts's SHAPE_TOOLS
+      // handling on the receiving end).
+      buffer = buildShapeOutline(activeShapeTool, shapeAnchor, point, point.t);
+    } else {
+      buffer.push(point);
+    }
     scheduleFlush();
   }
 
   function handlePointerUp(e: PointerEvent) {
     if (!drawing || !strokeId) return;
-    buffer.push(toNormalizedPoint(e));
+    const point = toNormalizedPoint(e);
+    if (activeShapeTool && shapeAnchor) {
+      buffer = buildShapeOutline(activeShapeTool, shapeAnchor, point, point.t);
+    } else {
+      buffer.push(point);
+    }
     flush();
     callbacks.onEnd(strokeId);
     drawing = false;
     strokeId = null;
+    shapeAnchor = null;
+    activeShapeTool = null;
   }
 
   canvas.addEventListener("pointerdown", handlePointerDown);

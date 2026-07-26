@@ -12,6 +12,9 @@ const TOOLS: { tool: DrawTool; icon: string; label: string; key: string }[] = [
   { tool: "brush", icon: "brush", label: "Brush", key: "B" },
   { tool: "eraser", icon: "ink_eraser", label: "Eraser", key: "E" },
   { tool: "fill", icon: "format_color_fill", label: "Fill", key: "F" },
+  { tool: "rect", icon: "check_box_outline_blank", label: "Square", key: "R" },
+  { tool: "ellipse", icon: "circle", label: "Circle", key: "O" },
+  { tool: "arrow", icon: "arrow_outward", label: "Arrow", key: "A" },
 ];
 
 const TOOL_SHORTCUTS: Record<string, DrawTool> = {
@@ -19,6 +22,9 @@ const TOOL_SHORTCUTS: Record<string, DrawTool> = {
   b: "brush",
   e: "eraser",
   f: "fill",
+  r: "rect",
+  o: "ellipse",
+  a: "arrow",
 };
 const SIZE_STEP = 2;
 const SIZE_MIN = 2;
@@ -97,7 +103,7 @@ export function Toolbar() {
 
       <div className="hidden h-8 w-px bg-white/10 md:block" />
 
-      <div className={`flex flex-wrap gap-1.5 ${paletteFrozen ? "pointer-events-none opacity-40" : ""}`}>
+      <div className={`flex flex-wrap items-center gap-1.5 ${paletteFrozen ? "pointer-events-none opacity-40" : ""}`}>
         {COLORS.map((c) => (
           <button
             key={c}
@@ -109,6 +115,26 @@ export function Toolbar() {
             aria-label={`color ${c}`}
           />
         ))}
+        {/* Custom RGB picker: opens the browser's native color dialog. The
+            native swatch chrome is hidden (opacity-0, oversized, clipped by
+            the rounded-full label) so it reads as one more palette dot — a
+            rainbow ring instead of a plain circle — rather than a form
+            control that looks out of place next to the presets. */}
+        <label
+          className={`relative h-6 w-6 shrink-0 cursor-pointer overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-surface-container transition-transform hover:scale-110 ${
+            !COLORS.includes(color) ? "ring-primary" : "ring-white/20"
+          }`}
+          style={{ background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)" }}
+          title="Custom color"
+        >
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            aria-label="Custom color picker"
+            className="absolute -left-1 -top-1 h-8 w-8 cursor-pointer opacity-0"
+          />
+        </label>
       </div>
 
       {tool !== "fill" && (

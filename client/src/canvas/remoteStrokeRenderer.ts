@@ -1,11 +1,12 @@
-import type {
-  DrawTool,
-  StrokePoint,
-  StrokeStartPayload,
-  StrokePointPayload,
-  StrokeEndPayload,
-  DrawFillPayload,
-  CommittedDrawOp,
+import {
+  SHAPE_TOOLS,
+  type DrawTool,
+  type StrokePoint,
+  type StrokeStartPayload,
+  type StrokePointPayload,
+  type StrokeEndPayload,
+  type DrawFillPayload,
+  type CommittedDrawOp,
 } from "@pixelpanic/shared";
 import { strokeToPath2D } from "./perfectFreehandRender";
 import { floodFill } from "./floodFill";
@@ -62,7 +63,12 @@ export class StrokeRenderer {
   handlePoints(payload: StrokePointPayload): void {
     const s = this.active.get(payload.strokeId);
     if (!s) return;
-    s.points.push(...payload.points);
+    // Shape tools redraw their whole outline from the anchor point every
+    // frame (see strokeCapture.ts) rather than appending like a freehand
+    // stroke, so the live preview tracks the drag instead of accumulating
+    // every intermediate position into a scribble.
+    if (SHAPE_TOOLS.has(s.tool)) s.points = payload.points;
+    else s.points.push(...payload.points);
     this.renderLiveLayer();
   }
 
