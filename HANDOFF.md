@@ -1,24 +1,31 @@
 # HANDOFF — Pixelpanic
 
-**Date:** 2026-07-24 (latest session)
+**Date:** 2026-07-27 (latest session)
 **Status:** Phase 1 (MVP), Phase 2 (team mode, round-robin tournament,
 word-pack builder), and Phase 3 (chaos modes, legacy titles, rival system,
 avatars, animated background/UI polish — everything except ghost drawing,
 which is deliberately deferred) are all built, typechecked, linted, built,
-and unit-tested (Vitest, 45 tests across every pure scoring/rotation/
+and unit-tested (Vitest, tests across every pure scoring/rotation/
 scheduling/matching function). A follow-up session on top of all three
 phases added round-flow animations, a 10-item UI/UX polish pass, mid-game
 join/reconnect with a live canvas catch-up, a fix for the drawer's own
 stroke lagging once deployed, and a room-lifecycle rework (leave/close,
-ghost-room cleanup) — see "Latest session — post-Phase-3 additions" below.
-That session's changes **were** verified with real, scripted browser
-automation (Playwright, driven headless via a throwaway script in the
-scratchpad — not part of the committed codebase) across multiple browser
-contexts; Phase 1/2/3 themselves still only have REST/migration-level
-runtime smoke tests plus scripted Phase-1-loop verification (see "How it was
-verified" below) — **no full human playtest of every chaos mode, team mode,
-or tournament has happened yet.** See the "Phase 2," "Phase 3," and latest-
-session sections below for exactly what to verify next.
+ghost-room cleanup) — see "Session — post-Phase-3 additions" below. A third
+session on top of that added shape tools + a custom color picker,
+synthesized sound effects, live like/dislike drawing reactions, a cosmetic
+chat mascot, space-insensitive guess matching, and socket-level rate
+limiting — see "Latest session — drawing tools, audio, reactions &
+hardening" immediately below. The post-Phase-3 session's changes **were**
+verified with real, scripted browser automation (Playwright, driven
+headless via a throwaway script in the scratchpad — not part of the
+committed codebase) across multiple browser contexts; Phase 1/2/3 themselves
+still only have REST/migration-level runtime smoke tests plus scripted
+Phase-1-loop verification (see "How it was verified" below), and this
+newest session has **no browser verification at all yet** (typecheck/build/
+unit-test clean only) — **no full human playtest of every chaos mode, team
+mode, tournament, or the newest drawing/audio features has happened yet.**
+See the "Phase 2," "Phase 3," and session sections below for exactly what to
+verify next.
 
 This doc is the "pick up where we left off" reference. For architecture and
 conventions, see [CLAUDE.md](CLAUDE.md). For setup/run instructions
@@ -29,7 +36,76 @@ project pitch now, not a setup guide. For what's next, see
 
 ---
 
-## Latest session — post-Phase-3 additions
+## Latest session — drawing tools, audio, reactions & hardening
+
+Built on top of everything below without restructuring it. See CLAUDE.md's
+"Latest session additions" section for the file-level implementation facts
+— this section is the narrative/status version.
+
+**Shape tools + custom color picker.** The toolbar gained rectangle,
+ellipse, and arrow tools (`R`/`O`/`A` shortcuts) alongside pencil/brush/
+eraser/fill, plus a conic-gradient "custom color" swatch that opens the
+browser's native color picker for an arbitrary hex value on top of the
+existing 10-color preset row. The interesting part isn't the UI, it's the
+sync model: a shape is drag-anchored, so unlike a freehand stroke (which
+only ever appends new points) it has to *resend its whole outline* on every
+flush as the drag moves — `shared/src/drawing.ts` now exports a
+`SHAPE_TOOLS` set specifically so the client's live renderer and the
+server's `DRAW_SNAPSHOT` catch-up buffer agree on which tools replace vs.
+append. This was the one real design decision in an otherwise mechanical
+addition (`canvas/shapeGeometry.ts` just computes point lists for a
+rectangle loop, a sampled ellipse polygon, and a shaft+chevron arrow, all as
+plain `StrokePoint[]` so they ride the existing freehand stroke renderer).
+
+**Synthesized sound effects.** Every SFX (correct guess, wrong guess,
+near-miss, round end) is generated live with the Web Audio API — oscillators
+and gain envelopes, no shipped audio files, no licensing questions. Each has
+1-2 randomized variants. Background music was tried during this session and
+pulled — it read as noise under the rest of the party chaos rather than
+adding anything. Gated behind a mute toggle persisted to `localStorage` and
+an explicit `unlock()` on first user gesture (browsers refuse to start audio
+before one).
+
+**Live drawing reactions + a chat mascot.** Guessers can now like/dislike
+the drawing in progress (`DrawingRating.tsx`, reset every turn, drawer sees
+a read-only tally); a new private `WRONG_GUESS` emit (previously only
+`NEAR_MISS` existed as a dedicated signal) lets "Apurva's Bot" — a cosmetic,
+client-only chat mascot with a pool of cheeky Hinglish one-liners — react to
+your own wrong/near-miss guesses. Deliberately never synced server-side:
+each client picks its own quip locally, so two players can see different
+flavor text for the identical event with zero coordination needed. A new
+`"roundSeparator"` chat-message kind also marks where each turn's guesses
+start, so a scrolled-up chat log stays readable.
+
+**Guess matching leniency + rate limiting.** `guessMatcher.isCorrectGuess`
+now also accepts a multi-word answer typed as one run-together word
+("icecream" for "ice cream") — a real fairness gap, not a new feature, since
+the space was always just an artifact of how the word pack wrote the answer.
+Separately, chat/guess submission and votekick now sit behind an in-memory
+token-bucket rate limiter (`server/src/utils/rateLimiter.ts`, keyed by
+`socket.id`, cleaned up on disconnect) — the one place the socket layer had
+no throttling at all before this session.
+
+**Client hardening.** A root-level `ErrorBoundary` now catches unhandled
+render errors with a reload prompt instead of the app going blank silently,
+and a new `useBackClose` hook makes the device/browser Back button dismiss
+an open overlay (e.g. the word-pack editor) instead of navigating away from
+the app.
+
+**Not yet verified from this session:** none of it has been exercised in a
+real browser yet — typecheck/lint/build/unit-tests are clean, but nothing
+has been clicked through. Specifically still to check: shape tools rendering
+identically across a drag on two different clients (they're more sensitive
+to timing than freehand strokes, since every flush replaces the whole
+outline), sound effects actually firing on the intended events without
+overlapping/clashing during a fast round, the like/dislike tally staying in
+sync across guessers in a live multi-tab session, the rate limiter's
+thresholds under real fast-typing play (not just unit-tested token math),
+and the bot quips/near-miss sound combo not feeling spammy in a long game.
+
+---
+
+## Session — post-Phase-3 additions
 
 Built on top of Phase 1-3 without restructuring it, except where noted as a
 deliberate revision. See CLAUDE.md's "Post-Phase-3 additions" section for
@@ -450,10 +526,13 @@ rather than trusting independent client-side computation.
    leaderboard, then a team-mode game, then a 3+ player tournament, then a
    game with each chaos mode toggled on, then click through the word-pack
    builder and the rival panel — see the three "Not yet verified" sections
-   above for the specific things to check. The latest session's own
+   above for the specific things to check. The post-Phase-3 session's own
    additions (round-flow animations, mid-game join, the UI/UX polish batch)
-   have scripted browser coverage already (see "Latest session" above) but
-   not a human playtest pass either.
+   have scripted browser coverage already (see that session's section above)
+   but not a human playtest pass either. The newest session (shape tools,
+   sound effects, drawing reactions, the chat mascot, rate limiting) has
+   **no** browser coverage yet, scripted or human — prioritize this one,
+   see its "Not yet verified" note above.
 2. Test on an actual phone (or DevTools device toolbar) for the mobile
    layout, touch-drawing, the glassmorphism/font rendering, and the
    `AppHeader`/doodle background/reconnect-toast stack not interfering with

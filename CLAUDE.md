@@ -8,14 +8,17 @@ horizontal-scaling infrastructure. One process serves the API, the socket
 connections, and (in production) the built client.
 
 This file documents **Phase 1 architecture in full, plus Phase 2, Phase 3,
-and post-Phase-3 addenda** (Phase 2: team mode, round-robin tournament,
-word-pack builder — see "Phase 2 additions" below. Phase 3: chaos modes,
-legacy titles, rival system, avatars — see "Phase 3 additions" below.
+post-Phase-3, and latest-session addenda** (Phase 2: team mode, round-robin
+tournament, word-pack builder — see "Phase 2 additions" below. Phase 3: chaos
+modes, legacy titles, rival system, avatars — see "Phase 3 additions" below.
 Post-Phase-3: round-flow animations, a UI/UX polish pass, mid-game join/
 reconnect, the local-first drawing fix, and the room-lifecycle rework — see
-"Post-Phase-3 additions" below). Everything in the earlier sections is still
-accurate; each addition only adds to it, nothing was restructured except
-where a section explicitly says a prior decision was revised. See
+"Post-Phase-3 additions" below. Latest session: shape tools, a custom color
+picker, synthesized sound effects, live drawing reactions, a chat mascot,
+space-insensitive guess matching, and socket-level rate limiting — see
+"Latest session additions" below). Everything in the earlier sections is
+still accurate; each addition only adds to it, nothing was restructured
+except where a section explicitly says a prior decision was revised. See
 [PHASE3-PLAN.md](PHASE3-PLAN.md) for the detailed per-feature design
 rationale and [HANDOFF.md](HANDOFF.md) for current status and what's been
 verified.
@@ -433,3 +436,93 @@ narrative in HANDOFF.md's latest session section; the load-bearing facts:
   the combined total. `WORD_PACK_CREATE` now appends the newly-created
   pack's id to the room's existing `wordPackIds` instead of replacing the
   selection outright.
+
+## Latest session additions
+
+A round of drawing-tool expansion, ambient audio/reaction feedback, guess-
+matching leniency, and light hardening — all additive on top of everything
+above, no restructuring.
+
+- **Shape tools.** `DrawTool` gained `"rect" | "ellipse" | "arrow"` alongside
+  pencil/brush/eraser/fill, with toolbar buttons and keyboard shortcuts
+  (`R`/`O`/`A`). Unlike a freehand stroke (which appends new points as the
+  pointer moves), a shape tool is drag-anchored: `strokeCapture.ts` computes
+  the full outline from the drag's anchor + current point every animation
+  frame via `canvas/shapeGeometry.ts` (`buildShapeOutline` — closed
+  rectangle loop, a sampled ellipse polygon, or a shaft+chevron arrow, all
+  expressed as a plain `StrokePoint[]` so they reuse the existing freehand
+  stroke renderer instead of a dedicated shape-drawing code path) and
+  **resends the whole outline**, not just new points. `shared/src/drawing.ts`
+  exports `SHAPE_TOOLS: ReadonlySet<DrawTool>` specifically so the client's
+  live renderer and the server's committed-op storage (used for
+  `DRAW_SNAPSHOT` catch-up) both know to *replace* a shape stroke's points on
+  each flush rather than *append* to them — the one place shape and freehand
+  strokes are handled differently, and it's centralized in `shared/` so the
+  two sides can't drift on which tools behave this way.
+- **Custom color picker.** Alongside the existing 10-swatch preset row,
+  `Toolbar.tsx` now has a conic-gradient "custom color" dot that hides a
+  native `<input type="color">` under a clipped, oversized, zero-opacity
+  overlay — reads as one more palette circle rather than a form control, but
+  opens the browser's own color dialog for an arbitrary hex value.
+- **Synthesized sound effects.** `client/src/lib/sound.ts` generates every
+  SFX live via the Web Audio API (oscillators + gain envelopes) instead of
+  shipping audio files — no binary assets, no licensing to worry about for
+  "funny" sounds. Covers correct guess, wrong guess, near-miss, and
+  round-end, each with 1-2 randomized variants so a chatty round doesn't
+  hear the identical jingle every time. `useAudioStore` gates playback
+  behind a `sfxOn` toggle persisted to `localStorage`
+  (`pixelpanic:sfxOn`) and an `unlock()` call (fired from the first
+  click/keydown, since browsers block `AudioContext` before a user gesture).
+  **No background music** — it was tried and pulled per feedback, since it
+  just read as noise under the rest of the party chaos.
+- **Live drawing reactions (like/dislike).** `DrawingRating.tsx` renders
+  thumbs-up/down buttons for guessers only, visible for the duration of the
+  `"drawing"` phase; the drawer sees a read-only tally instead
+  (`ClientEvents.DRAWING_RATE` → `RoomInstance.rateDrawing`, broadcast back
+  as `ServerEvents.DRAWING_RATING_UPDATE`). Tracked per-turn in
+  `RoomInstance.drawingRatings` (a guesser playerId → `"like" | "dislike"`
+  map, one vote per player, overwritable), reset to `{0, 0}` at the start of
+  every `startTurn` — never carried across turns or the whole game.
+- **"Apurva's Bot" — a cosmetic chat mascot.** `client/src/lib/botQuips.ts`
+  holds pools of cheeky Hinglish one-liners reacting to a wrong guess, a
+  near-miss, or (client-side only) a correct one. This is deliberately
+  **never sent to the server** — each client picks its own quip locally off
+  the private `ServerEvents.WRONG_GUESS`/`NEAR_MISS` emits it already
+  receives, so different players can see different flavor text for the same
+  event without any state needing to agree across clients. Rendered as a new
+  `ChatMessageKind: "bot"` row in `ChatPanel.tsx`, synthesized client-side —
+  the server itself never emits a `"bot"`-kind `ChatMessage`.
+  `ChatMessageKind` also gained `"roundSeparator"`, a plain visual divider
+  inserted at the start of each new turn so a scrolled-up chat feed makes it
+  obvious where the previous drawer's guesses ended.
+- **Private `WRONG_GUESS` emit.** Previously an incorrect guess was just an
+  ordinary `"chat"`-kind message with no dedicated signal; `RoomInstance`
+  now privately emits `ServerEvents.WRONG_GUESS` to the guesser whose guess
+  just failed (mutually exclusive with the existing `NEAR_MISS` case), which
+  is what the sound effect and bot-quip reactions above key off. It carries
+  no new information beyond "yours, specifically, just missed" — regular
+  chat broadcast of the guess text is unaffected.
+- **Guess matching is space-insensitive.** `guessMatcher.isCorrectGuess`
+  now also accepts a multi-word answer ("ice cream") typed as one run-together
+  word ("icecream") — the space is an artifact of how the word pack wrote the
+  answer, not something a guesser should be marked wrong for dropping.
+  Checked as a fallback after the normal normalized-string comparison.
+- **Socket-level rate limiting.** `server/src/utils/rateLimiter.ts` is an
+  in-memory token-bucket (`RateLimiterRegistry`, keyed by `socket.id`, no
+  Redis — consistent with everything else at this scale) guarding the two
+  socket events with no other built-in throttling: chat/guess submission
+  (`chatRateLimiter` — generous burst, fast refill, since normal play
+  already involves typing quickly) and votekick (`votekickRateLimiter` —
+  much stricter, since it's a moderation action rather than gameplay input).
+  Both buckets are cleaned up on `disconnect` so they don't leak per-socket
+  state across reconnects.
+- **Client hardening.** A root-level `ErrorBoundary.tsx` catches unhandled
+  render errors with a reload affordance instead of the whole app going
+  blank silently. `useBackClose.ts` pushes a throwaway `history` entry
+  whenever an overlay opens, so the device/browser Back button dismisses the
+  overlay instead of navigating away from the app entirely — used by modals
+  like the word-pack editor. `resetRoomScopedState()` (`client/src/lib/
+  resetRoomState.ts`) centralizes what "leaving a room" clears — room, game,
+  chat, tournament, and chaos stores — called from both the voluntary leave
+  path and the `ROOM_CLOSED` handler, rather than each call site clearing
+  stores individually.
