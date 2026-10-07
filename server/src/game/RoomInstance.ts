@@ -3,11 +3,13 @@ import type { Server, Socket } from "socket.io";
 import {
   ServerEvents,
   DEFAULT_ROOM_SETTINGS,
+  DEFAULT_CHAOS_MODES,
   SCORING,
   type Room,
   type Player,
   type Team,
   type RoomVisibility,
+  type HintFrequency,
   type GameState,
   type TurnState,
   type WordPack,
@@ -54,6 +56,7 @@ import { recordGameEndStats } from "../db/statsRepo.js";
 import { checkAndUnlockTitles } from "../db/titlesRepo.js";
 import { logger } from "../utils/logger.js";
 
+const HINT_FREQUENCIES: HintFrequency[] = ["off", "slow", "normal", "fast"];
 const DEFAULT_TEAM_COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#eab308"];
 const TOURNAMENT_MIN_PLAYERS = 2;
 const TOURNAMENT_MAX_PLAYERS = 10;
@@ -396,22 +399,28 @@ export class RoomInstance implements TournamentHost {
 
   updateSettings(requesterId: string, patch: RoomUpdateSettingsPayload): void {
     if (requesterId !== this.room.hostId) return;
-    if (patch.roundCount !== undefined) {
-      this.room.settings.roundCount = clamp(patch.roundCount, 1, 10);
+    // Mid-game changes would desync live state (e.g. totalRounds was being
+    // reset under a running tournament match that forces it to 1).
+    if (this.game.isGameActive || this.tournament) return;
+    if (Number.isFinite(patch.roundCount)) {
+      this.room.settings.roundCount = Math.round(clamp(patch.roundCount!, 1, 10));
     }
-    if (patch.drawTimeSec !== undefined) {
-      this.room.settings.drawTimeSec = clamp(patch.drawTimeSec, 30, 180);
+    if (Number.isFinite(patch.drawTimeSec)) {
+      this.room.settings.drawTimeSec = Math.round(clamp(patch.drawTimeSec!, 30, 180));
     }
-    if (patch.hintFrequency !== undefined) {
+    if (patch.hintFrequency && HINT_FREQUENCIES.includes(patch.hintFrequency)) {
       this.room.settings.hintFrequency = patch.hintFrequency;
     }
-    if (patch.wordPackIds !== undefined) {
-      this.room.settings.wordPackIds = patch.wordPackIds.slice(0, 5);
+    if (Array.isArray(patch.wordPackIds)) {
+      this.room.settings.wordPackIds = patch.wordPackIds.filter((id) => typeof id === "string").slice(0, 5);
     }
-    if (patch.chaosModes !== undefined) {
+    if (patch.chaosModes && typeof patch.chaosModes === "object") {
+      const known = Object.entries(patch.chaosModes).filter(
+        ([key, value]) => key in DEFAULT_CHAOS_MODES && typeof value === "boolean"
+      );
       this.room.settings.chaosModes = {
         ...this.room.settings.chaosModes,
-        ...patch.chaosModes,
+        ...Object.fromEntries(known),
         // Ghost drawing needs a stroke-aggregation pipeline that doesn't
         // exist yet (see PHASE3-PLAN.md) — always force it off server-side
         // regardless of what a client sends, so the flag exists in the
@@ -419,7 +428,7 @@ export class RoomInstance implements TournamentHost {
         ghostDrawing: false,
       };
     }
-    if (patch.mode !== undefined) {
+    if (patch.mode === "solo" || patch.mode === "team") {
       this.room.settings.mode = patch.mode;
       // Switching into team mode for the first time: seed 2 default teams
       // and auto-balance current players round-robin, so the host isn't
