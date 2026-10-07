@@ -12,6 +12,10 @@ export interface StrokeCaptureCallbacks {
   onFill: (opId: string, point: StrokePoint, color: string) => void;
 }
 
+function round(value: number, factor: number): number {
+  return Math.round(value * factor) / factor;
+}
+
 // Captures local pointer input as normalized (0..1) StrokePoints and batches
 // them once per animation frame — the client half of the "never full canvas
 // frames" realtime-sync requirement.
@@ -34,13 +38,15 @@ export function attachStrokeCapture(
   let shapeAnchor: StrokePoint | null = null;
   let activeShapeTool: ShapeTool | null = null;
 
+  // Rounded before sending: 4 decimals is sub-pixel even on a 4K canvas,
+  // and roughly halves the JSON size of every point batch.
   function toNormalizedPoint(e: PointerEvent): StrokePoint {
     const rect = canvas.getBoundingClientRect();
     return {
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top) / rect.height,
-      pressure: e.pressure > 0 ? e.pressure : 0.5,
-      t: performance.now() - strokeStartTime,
+      x: round((e.clientX - rect.left) / rect.width, 1e4),
+      y: round((e.clientY - rect.top) / rect.height, 1e4),
+      pressure: e.pressure > 0 ? round(e.pressure, 100) : 0.5,
+      t: Math.round(performance.now() - strokeStartTime),
     };
   }
 
@@ -96,7 +102,12 @@ export function attachStrokeCapture(
       // handling on the receiving end).
       buffer = buildShapeOutline(activeShapeTool, shapeAnchor, point, point.t);
     } else {
-      buffer.push(point);
+      // Browsers deliver one pointermove per frame but may have sampled the
+      // pen/finger several times in between (120Hz screens, styluses) —
+      // using every sample gives noticeably smoother curves.
+      const samples = e.getCoalescedEvents?.() ?? [];
+      if (samples.length > 1) for (const sample of samples) buffer.push(toNormalizedPoint(sample));
+      else buffer.push(point);
     }
     scheduleFlush();
   }
