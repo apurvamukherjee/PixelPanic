@@ -10,8 +10,8 @@ interface AvatarPickerProps {
 
 // Curated preset picker: left/right arrows cycle, dice randomizes — the v1
 // scope from PHASE3-PLAN.md (complete presets, not independently-composable
-// layers). Falls back to index 0 if the stored id doesn't match a known
-// preset (e.g. the preset list changes later).
+// layers). With no preset chosen it previews the initials circle, exactly
+// what other players will see.
 export function AvatarPicker({ avatarId, onChange, name }: AvatarPickerProps) {
   const currentIndex = Math.max(
     0,
@@ -39,7 +39,7 @@ export function AvatarPicker({ avatarId, onChange, name }: AvatarPickerProps) {
         <Icon name="chevron_left" />
       </button>
 
-      <Avatar name={name || "?"} color="#8b5cf6" avatarId={avatarId ?? AVATAR_PRESETS[0]!.id} size={56} />
+      <Avatar name={name || "?"} color="#8b5cf6" avatarId={avatarId} size={56} />
 
       <button
         type="button"
