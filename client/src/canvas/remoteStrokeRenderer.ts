@@ -41,6 +41,7 @@ export class StrokeRenderer {
   // must preserve that order (a fill only makes sense relative to whatever
   // was already drawn onto the canvas at the time it ran).
   private committed: CommittedItem[] = [];
+  private liveFrame: number | null = null;
 
   constructor(
     private committedCtx: CanvasRenderingContext2D,
@@ -57,7 +58,7 @@ export class StrokeRenderer {
       size: payload.size,
       points: [payload.point],
     });
-    this.renderLiveLayer();
+    this.scheduleLiveRender();
   }
 
   handlePoints(payload: StrokePointPayload): void {
@@ -69,7 +70,7 @@ export class StrokeRenderer {
     // every intermediate position into a scribble.
     if (SHAPE_TOOLS.has(s.tool)) s.points = payload.points;
     else s.points.push(...payload.points);
-    this.renderLiveLayer();
+    this.scheduleLiveRender();
   }
 
   handleEnd(payload: StrokeEndPayload): void {
@@ -135,6 +136,17 @@ export class StrokeRenderer {
   private applyFill(ctx: CanvasRenderingContext2D, point: StrokePoint, color: string): void {
     const { width, height } = this.getCanvasSize();
     floodFill(ctx, point.x * width, point.y * height, color, width, height);
+  }
+
+  // Point batches can arrive several times per frame (network bursts, or the
+  // drawer's own input plus echoes) — redrawing every active stroke for each
+  // one was wasted work. One redraw per frame is all the screen can show.
+  private scheduleLiveRender(): void {
+    if (this.liveFrame !== null) return;
+    this.liveFrame = requestAnimationFrame(() => {
+      this.liveFrame = null;
+      this.renderLiveLayer();
+    });
   }
 
   private renderLiveLayer(): void {
