@@ -84,10 +84,16 @@ export function DrawingCanvas() {
       // visible gain on doodles, and every fill/undo replay pays for each one.
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const rect = container!.getBoundingClientRect();
-      committedCanvas!.width = Math.round(rect.width * dpr);
-      committedCanvas!.height = Math.round(rect.height * dpr);
-      liveCanvas!.width = Math.round(rect.width * dpr);
-      liveCanvas!.height = Math.round(rect.height * dpr);
+      const width = Math.round(rect.width * dpr);
+      const height = Math.round(rect.height * dpr);
+      // Assigning canvas.width wipes the bitmap even when unchanged, forcing a
+      // full replay — skip it when the layout shift didn't change our size
+      // (e.g. the mobile keyboard opening).
+      if (committedCanvas!.width === width && committedCanvas!.height === height) return;
+      committedCanvas!.width = width;
+      committedCanvas!.height = height;
+      liveCanvas!.width = width;
+      liveCanvas!.height = height;
       renderer.handleResize();
     }
     resizeCanvases();
