@@ -85,10 +85,8 @@ export function FeatureGuide() {
 
   return (
     <>
-      <Button variant="ghost" onClick={() => setOpen(true)} className="w-full">
-        <span className="flex items-center justify-center gap-2">
-          <Icon name="help" className="!text-base" /> How to play &amp; features
-        </span>
+      <Button variant="ghost" onClick={() => setOpen(true)} className="min-h-0 py-2 text-sm">
+        How to play
       </Button>
 
       {open && (

@@ -34,7 +34,7 @@ export function AvatarPicker({ avatarId, onChange, name }: AvatarPickerProps) {
         type="button"
         onClick={() => cycle(-1)}
         aria-label="Previous avatar"
-        className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-primary"
+        className="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-white/5 hover:text-primary"
       >
         <Icon name="chevron_left" />
       </button>
@@ -45,7 +45,7 @@ export function AvatarPicker({ avatarId, onChange, name }: AvatarPickerProps) {
         type="button"
         onClick={() => cycle(1)}
         aria-label="Next avatar"
-        className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-primary"
+        className="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-white/5 hover:text-primary"
       >
         <Icon name="chevron_right" />
       </button>
@@ -53,8 +53,9 @@ export function AvatarPicker({ avatarId, onChange, name }: AvatarPickerProps) {
       <button
         type="button"
         onClick={randomize}
-        title="Randomize"
-        className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-secondary"
+        title="Random avatar"
+        aria-label="Random avatar"
+        className="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-white/5 hover:text-secondary"
       >
         <Icon name="casino" />
       </button>
