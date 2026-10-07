@@ -10,6 +10,12 @@ const HINT_FREQUENCY_PERCENT: Record<HintFrequency, number> = {
   fast: 0.6,
 };
 
+// Spaces and punctuation ("yo-yo", "rubik's cube") are shown as-is rather
+// than masked — they're not part of what the guesser has to type.
+function isGuessable(ch: string): boolean {
+  return /[\p{L}\p{N}]/u.test(ch);
+}
+
 export interface ScheduledHint {
   atMs: number; // ms after turn start
   index: number; // index into the word string to reveal
@@ -31,7 +37,7 @@ export function computeHintSchedule(
 ): ScheduledHint[] {
   const letterIndices: number[] = [];
   for (let i = 0; i < word.length; i++) {
-    if (word[i] !== " ") letterIndices.push(i);
+    if (isGuessable(word[i]!)) letterIndices.push(i);
   }
 
   if (word.length <= 3 || frequency === "off") return [];
@@ -52,9 +58,6 @@ export function computeHintSchedule(
 export function buildMaskedWord(word: string, revealedIndices: Set<number>): string {
   return word
     .split("")
-    .map((ch, i) => {
-      if (ch === " ") return " ";
-      return revealedIndices.has(i) ? ch : "_";
-    })
+    .map((ch, i) => (!isGuessable(ch) || revealedIndices.has(i) ? ch : "_"))
     .join(" ");
 }

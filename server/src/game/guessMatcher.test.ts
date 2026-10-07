@@ -52,3 +52,12 @@ describe("isNearMiss", () => {
     expect(isNearMiss("xyz", "elephant")).toBe(false);
   });
 });
+
+describe("punctuation in answers", () => {
+  it("ignores apostrophes and hyphens on both sides", () => {
+    expect(isCorrectGuess("rubiks cube", "rubik's cube")).toBe(true);
+    expect(isCorrectGuess("yoyo", "yo-yo")).toBe(true);
+    expect(isCorrectGuess("yo yo", "yo-yo")).toBe(true);
+    expect(isCorrectGuess("yo-yo!", "yo-yo")).toBe(true);
+  });
+});

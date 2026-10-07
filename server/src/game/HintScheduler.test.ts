@@ -46,3 +46,11 @@ describe("buildMaskedWord", () => {
     expect(buildMaskedWord("cat", new Set([0, 1, 2]))).toBe("c a t");
   });
 });
+
+describe("punctuation in masked words", () => {
+  it("shows punctuation and never schedules it as a hint", () => {
+    expect(buildMaskedWord("yo-yo", new Set())).toBe("_ _ - _ _");
+    const hints = computeHintSchedule("rubik's cube", 80, "fast");
+    expect(hints.every((h) => "rubik's cube"[h.index] !== "'" && "rubik's cube"[h.index] !== " ")).toBe(true);
+  });
+});

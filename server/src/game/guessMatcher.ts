@@ -1,5 +1,11 @@
+// Punctuation is ignored on both sides: built-in words like "yo-yo" and
+// "rubik's cube" would otherwise only match if typed with the exact symbol.
 function normalize(text: string): string {
-  return text.trim().toLowerCase().replace(/\s+/g, " ");
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function isCorrectGuess(guess: string, word: string): boolean {
