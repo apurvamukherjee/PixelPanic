@@ -51,7 +51,7 @@ export function RoomPage() {
     return (
       <div className="mx-auto flex h-full max-w-lg flex-col gap-4 p-4 pt-8">
         <TournamentStandingsScreen />
-        {isHost && tournament.isComplete && (
+        {tournament.isComplete && (
           <Button variant="secondary" onClick={() => useTournamentStore.getState().clear()}>
             Back to lobby
           </Button>
