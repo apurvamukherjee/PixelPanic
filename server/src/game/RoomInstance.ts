@@ -785,35 +785,15 @@ export class RoomInstance implements TournamentHost {
     turn.phase = "drawing";
     turn.turnEndsAt = Date.now() + drawTimeSec * 1000;
 
-    const rotationPlayerIds = this.connectedRotationPlayerIds();
-    const serverNow = Date.now();
-    if (turn.isReverseMode) {
-      // Reverse mode: everyone EXCEPT the drawer sees the real word — the
-      // drawer has to draw/guess from the room's reactions instead. The
-      // drawer's own targeted emit (sent second, so it wins for their
-      // socket — same last-write-wins trick the normal path below relies
-      // on) is the only one that gets the masked version.
-      this.broadcast(ServerEvents.TURN_START, { turn, drawTimeSec, rotationPlayerIds, serverNow } satisfies TurnStartPayload);
-      this.emitTo(turn.drawerId, ServerEvents.TURN_START, {
-        turn: { ...turn, word: null },
-        drawTimeSec,
-        rotationPlayerIds,
-        serverNow,
-      } satisfies TurnStartPayload);
-    } else {
-      this.broadcast(ServerEvents.TURN_START, {
-        turn: { ...turn, word: null },
-        drawTimeSec,
-        rotationPlayerIds,
-        serverNow,
-      } satisfies TurnStartPayload);
-      this.emitTo(turn.drawerId, ServerEvents.TURN_START, {
-        turn,
-        drawTimeSec,
-        rotationPlayerIds,
-        serverNow,
-      } satisfies TurnStartPayload);
+    // Reverse mode flips who sees the word: everyone except the drawer gets
+    // it, and the drawer has to guess from the room's reactions instead.
+    const base = { drawTimeSec, rotationPlayerIds: this.connectedRotationPlayerIds(), serverNow: Date.now() };
+    const masked = { ...base, turn: { ...turn, word: null } } satisfies TurnStartPayload;
+    const unmasked = { ...base, turn } satisfies TurnStartPayload;
+    if (!this.disposed) {
+      this.io.to(this.room.id).except(turn.drawerId).emit(ServerEvents.TURN_START, turn.isReverseMode ? unmasked : masked);
     }
+    this.emitTo(turn.drawerId, ServerEvents.TURN_START, turn.isReverseMode ? masked : unmasked);
 
     const hints = computeHintSchedule(word, drawTimeSec, this.room.settings.hintFrequency);
     for (const hint of hints) {
