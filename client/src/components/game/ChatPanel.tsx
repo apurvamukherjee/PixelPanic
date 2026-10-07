@@ -214,7 +214,13 @@ export function ChatPanel() {
           </button>
         )}
       </div>
-      <div className="border-t border-white/5 p-3">
+      <form
+        className="border-t border-white/5 p-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
         <div className="relative">
           <input
             data-testid="chat-input"
@@ -228,6 +234,7 @@ export function ChatPanel() {
             autoCapitalize="off"
             autoComplete="off"
             spellCheck={false}
+            enterKeyHint="send"
             className="w-full rounded-xl border border-white/10 bg-background py-2.5 pl-4 pr-12 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary"
             placeholder={
               activeChannel === "team"
@@ -238,17 +245,17 @@ export function ChatPanel() {
             }
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
           />
           <button
+            type="submit"
+            aria-label="Send"
             data-testid="chat-send"
             className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-secondary text-on-secondary transition-transform active:scale-90"
-            onClick={submit}
           >
             <Icon name="send" className="!text-base" />
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
