@@ -168,7 +168,7 @@ export class StrokeRenderer {
     // `size` is a normalized 1..40 unit; scale relative to a 600px baseline
     // width so brush thickness looks consistent across canvas sizes.
     const pxSize = (s.size / 600) * width;
-    const path = strokeToPath2D(pixelPoints, pxSize);
+    const path = strokeToPath2D(pixelPoints, pxSize, s.tool);
 
     ctx.save();
     if (s.tool === "eraser" && isLivePreview) {
