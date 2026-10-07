@@ -9,11 +9,16 @@ import {
   type RoomErrorPayload,
 } from "@pixelpanic/shared";
 import type { RoomManager } from "../game/RoomManager.js";
+import { isId } from "./validate.js";
 
 const NAME_MAX_LEN = 20;
 
-function sanitizeName(name: string): string {
-  return name.trim().slice(0, NAME_MAX_LEN) || "Player";
+function sanitizeName(name: unknown): string {
+  return (typeof name === "string" ? name.trim().slice(0, NAME_MAX_LEN) : "") || "Player";
+}
+
+function sanitizeAvatarId(avatarId: unknown): string | null {
+  return isId(avatarId) ? avatarId : null;
 }
 
 function emitError(socket: Socket, payload: RoomErrorPayload): void {
@@ -22,23 +27,25 @@ function emitError(socket: Socket, payload: RoomErrorPayload): void {
 
 export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): void {
   socket.on(ClientEvents.ROOM_CREATE, (payload: RoomCreatePayload) => {
+    if (!isId(payload.anonId)) return;
     const room = roomManager.createRoom(
-      payload.visibility,
+      payload.visibility === "public" ? "public" : "private",
       socket,
       sanitizeName(payload.hostName),
       payload.anonId,
-      payload.avatarId ?? null
+      sanitizeAvatarId(payload.avatarId)
     );
     room.broadcastRoomState();
   });
 
   socket.on(ClientEvents.ROOM_JOIN, (payload: RoomJoinPayload) => {
+    if (!isId(payload.anonId) || !isId(payload.roomId)) return;
     const result = roomManager.joinRoom(
       payload.roomId,
       socket,
       sanitizeName(payload.name),
       payload.anonId,
-      payload.avatarId ?? null
+      sanitizeAvatarId(payload.avatarId)
     );
     if (!result.ok) {
       emitError(socket, {
@@ -51,6 +58,7 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
   });
 
   socket.on(ClientEvents.ROOM_QUICK_MATCH, (payload: RoomQuickMatchPayload) => {
+    if (!isId(payload.anonId)) return;
     const existing = roomManager.findQuickMatchRoom();
     if (existing) {
       const result = roomManager.joinRoom(
@@ -58,7 +66,7 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
         socket,
         sanitizeName(payload.name),
         payload.anonId,
-        payload.avatarId ?? null
+        sanitizeAvatarId(payload.avatarId)
       );
       if (result.ok) {
         result.room.broadcastRoomState();
@@ -70,7 +78,7 @@ export function registerRoomHandlers(socket: Socket, roomManager: RoomManager): 
       socket,
       sanitizeName(payload.name),
       payload.anonId,
-      payload.avatarId ?? null
+      sanitizeAvatarId(payload.avatarId)
     );
     room.broadcastRoomState();
   });
