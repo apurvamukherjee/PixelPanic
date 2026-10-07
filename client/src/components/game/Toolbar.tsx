@@ -57,6 +57,13 @@ export function Toolbar() {
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
 
       const key = e.key.toLowerCase();
+      if ((e.metaKey || e.ctrlKey) && key === "z") {
+        socket?.emit(ClientEvents.DRAW_UNDO);
+        e.preventDefault();
+        return;
+      }
+      // Leave browser/OS shortcuts (Ctrl+R, Cmd+F, ...) alone.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const shortcutTool = TOOL_SHORTCUTS[key];
       if (shortcutTool) {
         setTool(shortcutTool);
@@ -72,7 +79,7 @@ export function Toolbar() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isDrawer, paletteFrozen, setTool, setSize]);
+  }, [isDrawer, paletteFrozen, setTool, setSize, socket]);
 
   if (!isDrawer) return null;
 
@@ -189,6 +196,10 @@ export function Toolbar() {
             <div className="flex items-center justify-between text-on-surface">
               <span>Brush size</span>
               <kbd className="rounded bg-surface-container-highest px-1.5 py-0.5 font-mono">[ ]</kbd>
+            </div>
+            <div className="flex items-center justify-between text-on-surface">
+              <span>Undo</span>
+              <kbd className="rounded bg-surface-container-highest px-1.5 py-0.5 font-mono">Ctrl Z</kbd>
             </div>
           </div>
         )}
