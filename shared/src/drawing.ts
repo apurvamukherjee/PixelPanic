@@ -37,7 +37,7 @@ export interface StrokeEndPayload {
 
 // Paint-bucket fill: a single instant point + color, not a dragged stroke.
 // `strokeId` (client-generated, like a stroke's) lets it slot into the same
-// undo history as strokes — RoomInstance.currentTurnStrokeIds and
+// undo history as strokes — RoomInstance.committedOps and
 // DrawUndoPayload don't need to know "fill" is a different kind of op.
 export interface DrawFillPayload {
   strokeId: string;

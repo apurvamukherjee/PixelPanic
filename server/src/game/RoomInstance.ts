@@ -85,7 +85,6 @@ export class RoomInstance implements TournamentHost {
   private chatHistory: ChatMessage[] = [];
   private wordSelector: WordSelector;
   private rotationAnonIds: string[] = [];
-  private currentTurnStrokeIds: string[] = [];
   // The three words actually offered this turn — chooseWord only accepts one
   // of these, and a drawer reconnecting mid-choice gets them re-sent.
   private wordChoices: Omit<WordChoicesPayload, "serverNow"> | null = null;
@@ -732,7 +731,6 @@ export class RoomInstance implements TournamentHost {
       mashupVoteOpen: false,
       totalRounds: this.game.totalRounds,
     };
-    this.currentTurnStrokeIds = [];
     this.revealedIndices = new Set();
     this.mashupCandidateByAnon.clear();
     this.mashupVotes.clear();
@@ -749,7 +747,7 @@ export class RoomInstance implements TournamentHost {
     this.committedOps = [];
     this.activeStrokeOps.clear();
     // Fixes a real gap: nothing previously told clients to wipe the canvas
-    // between turns — currentTurnStrokeIds/revealedIndices were reset
+    // between turns — committedOps/revealedIndices were reset
     // server-side but the drawing itself lingered client-side until the
     // drawer manually hit Clear.
     this.broadcast(ServerEvents.DRAW_CLEAR, {});
@@ -1338,27 +1336,23 @@ export class RoomInstance implements TournamentHost {
 
   relayStrokeEnd(socketId: string, payload: StrokeEndPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
-    this.currentTurnStrokeIds.push(payload.strokeId);
     const op = this.activeStrokeOps.get(payload.strokeId);
-    if (op) {
-      this.committedOps.push(op);
-      this.activeStrokeOps.delete(payload.strokeId);
-    }
+    if (!op) return;
+    this.committedOps.push(op);
+    this.activeStrokeOps.delete(payload.strokeId);
     this.broadcast(ServerEvents.DRAW_STROKE_END, payload);
   }
 
-  // A fill is a single instant op (no start/point/end sequence) — slot its
-  // id into the same undo history as strokes so DRAW_UNDO can remove either.
+  // A fill is a single instant op (no start/point/end sequence) — it goes
+  // into the same committedOps history as strokes so DRAW_UNDO can remove either.
   relayFill(socketId: string, payload: DrawFillPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
-    this.currentTurnStrokeIds.push(payload.strokeId);
     this.committedOps.push({ kind: "fill", strokeId: payload.strokeId, point: payload.point, color: payload.color });
     this.broadcast(ServerEvents.DRAW_FILL, payload);
   }
 
   relayClear(socketId: string): void {
     if (!this.isCurrentDrawer(socketId)) return;
-    this.currentTurnStrokeIds = [];
     this.committedOps = [];
     this.activeStrokeOps.clear();
     this.broadcast(ServerEvents.DRAW_CLEAR, {});
@@ -1366,10 +1360,9 @@ export class RoomInstance implements TournamentHost {
 
   relayUndo(socketId: string): void {
     if (!this.isCurrentDrawer(socketId)) return;
-    const strokeId = this.currentTurnStrokeIds.pop();
-    if (!strokeId) return;
-    this.committedOps = this.committedOps.filter((op) => op.strokeId !== strokeId);
-    this.broadcast(ServerEvents.DRAW_UNDO, { strokeId });
+    const op = this.committedOps.pop();
+    if (!op) return;
+    this.broadcast(ServerEvents.DRAW_UNDO, { strokeId: op.strokeId });
   }
 
   // ---- moderation ----
