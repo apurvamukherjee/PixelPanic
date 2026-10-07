@@ -76,7 +76,8 @@ export const useGameStore = create<GameState>((set) => ({
 
   applyPhaseChange: (phase) => set({ phase }),
 
-  applyWordChoices: (payload) => set({ wordChoices: payload, phase: "wordChoice" }),
+  applyWordChoices: (payload) =>
+    set({ wordChoices: payload, phase: "wordChoice", clockOffsetMs: payload.serverNow - Date.now() }),
 
   applyTurnStart: (payload) =>
     set({
@@ -87,6 +88,7 @@ export const useGameStore = create<GameState>((set) => ({
       iGuessedThisTurn: false,
       revealedWordForMe: null,
       rotationPlayerIds: payload.rotationPlayerIds,
+      clockOffsetMs: payload.serverNow - Date.now(),
       revealedIndices: [],
       justRevealedIndex: null,
       drawingRating: { likes: 0, dislikes: 0 },

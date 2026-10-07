@@ -88,7 +88,7 @@ export class RoomInstance implements TournamentHost {
   private currentTurnStrokeIds: string[] = [];
   // The three words actually offered this turn — chooseWord only accepts one
   // of these, and a drawer reconnecting mid-choice gets them re-sent.
-  private wordChoices: WordChoicesPayload | null = null;
+  private wordChoices: Omit<WordChoicesPayload, "serverNow"> | null = null;
   // Mirrors the client's own StrokeRenderer.committed (remoteStrokeRenderer.ts)
   // so a mid-game joiner or reconnecting player can be caught up — see
   // catchUpNewcomer(). activeStrokeOps holds in-progress (not yet ended)
@@ -258,7 +258,10 @@ export class RoomInstance implements TournamentHost {
     if (!turn) return;
 
     if (turn.phase === "wordChoice" && turn.drawerId === playerId && this.wordChoices) {
-      this.emitTo(playerId, ServerEvents.WORD_CHOICES, this.wordChoices);
+      this.emitTo(playerId, ServerEvents.WORD_CHOICES, {
+        ...this.wordChoices,
+        serverNow: Date.now(),
+      } satisfies WordChoicesPayload);
       return;
     }
 
@@ -266,6 +269,7 @@ export class RoomInstance implements TournamentHost {
       turn: { ...turn, word: turn.isReverseMode ? turn.word : null },
       drawTimeSec: this.room.settings.drawTimeSec,
       rotationPlayerIds: this.connectedRotationPlayerIds(),
+      serverNow: Date.now(),
     } satisfies TurnStartPayload);
 
     this.emitTo(playerId, ServerEvents.SCORE_UPDATE, {
@@ -755,7 +759,10 @@ export class RoomInstance implements TournamentHost {
     this.broadcast(ServerEvents.DRAW_CLEAR, {});
 
     this.wordChoices = { words: [w1, w2, w3], deadline };
-    this.emitTo(drawer.id, ServerEvents.WORD_CHOICES, this.wordChoices);
+    this.emitTo(drawer.id, ServerEvents.WORD_CHOICES, {
+      ...this.wordChoices,
+      serverNow: Date.now(),
+    } satisfies WordChoicesPayload);
     this.broadcast(ServerEvents.GAME_PHASE_CHANGE, { phase: "wordChoice" });
 
     const timeout = setTimeout(() => {
@@ -783,28 +790,32 @@ export class RoomInstance implements TournamentHost {
     turn.turnEndsAt = Date.now() + drawTimeSec * 1000;
 
     const rotationPlayerIds = this.connectedRotationPlayerIds();
+    const serverNow = Date.now();
     if (turn.isReverseMode) {
       // Reverse mode: everyone EXCEPT the drawer sees the real word — the
       // drawer has to draw/guess from the room's reactions instead. The
       // drawer's own targeted emit (sent second, so it wins for their
       // socket — same last-write-wins trick the normal path below relies
       // on) is the only one that gets the masked version.
-      this.broadcast(ServerEvents.TURN_START, { turn, drawTimeSec, rotationPlayerIds } satisfies TurnStartPayload);
+      this.broadcast(ServerEvents.TURN_START, { turn, drawTimeSec, rotationPlayerIds, serverNow } satisfies TurnStartPayload);
       this.emitTo(turn.drawerId, ServerEvents.TURN_START, {
         turn: { ...turn, word: null },
         drawTimeSec,
         rotationPlayerIds,
+        serverNow,
       } satisfies TurnStartPayload);
     } else {
       this.broadcast(ServerEvents.TURN_START, {
         turn: { ...turn, word: null },
         drawTimeSec,
         rotationPlayerIds,
+        serverNow,
       } satisfies TurnStartPayload);
       this.emitTo(turn.drawerId, ServerEvents.TURN_START, {
         turn,
         drawTimeSec,
         rotationPlayerIds,
+        serverNow,
       } satisfies TurnStartPayload);
     }
 

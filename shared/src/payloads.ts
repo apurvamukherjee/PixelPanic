@@ -65,6 +65,9 @@ export interface RoomSetPlayerTeamPayload {
 export interface WordChoicesPayload {
   words: [string, string, string];
   deadline: number; // epoch ms
+  // Server clock at send time — clients render deadlines against this, not
+  // their own possibly-skewed clock.
+  serverNow: number;
 }
 
 export interface WordChoosePayload {
@@ -79,6 +82,7 @@ export interface TurnStartPayload {
   // Lets the client show "who's up next" without reimplementing rotation
   // logic (team-interleaved order, mid-game joins/leaves) itself.
   rotationPlayerIds: string[];
+  serverNow: number; // see WordChoicesPayload.serverNow
 }
 
 export interface TimerTickPayload {

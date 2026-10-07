@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ClientEvents } from "@pixelpanic/shared";
 import { useGameStore } from "../../store/useGameStore";
 import { useConnectionStore } from "../../store/useConnectionStore";
@@ -8,11 +8,8 @@ const RING_RADIUS = 20;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 // Small radial countdown ring, same urgent-at-<3s color cue as CountdownBar.
-// WORD_CHOICE_TIMEOUT_MS itself lives server-side only (RoomInstance.ts) —
-// rather than hardcode a copy of it here, the total is captured from the
-// first tick after each wordChoices payload arrives (deadline - now, which
-// is ~the full window minus network latency), so the ring self-adjusts if
-// that constant ever changes.
+// The total comes from the payload (deadline - serverNow) rather than a
+// client-side copy of WORD_CHOICE_TIMEOUT_MS.
 function CountdownRing({ remainingMs, totalMs }: { remainingMs: number; totalMs: number }) {
   const pct = totalMs > 0 ? Math.max(0, Math.min(1, remainingMs / totalMs)) : 0;
   const isUrgent = remainingMs < 3000;
@@ -36,24 +33,17 @@ function CountdownRing({ remainingMs, totalMs }: { remainingMs: number; totalMs:
 export function WordChoiceOverlay() {
   const phase = useGameStore((s) => s.phase);
   const wordChoices = useGameStore((s) => s.wordChoices);
+  const clockOffsetMs = useGameStore((s) => s.clockOffsetMs);
   const socket = useConnectionStore((s) => s.socket);
-  const [secondsLeft, setSecondsLeft] = useState(0);
   const [remainingMs, setRemainingMs] = useState(0);
-  const totalMsRef = useRef(0);
 
   useEffect(() => {
     if (!wordChoices) return;
-    totalMsRef.current = 0;
-    const tick = () => {
-      const ms = Math.max(0, wordChoices.deadline - Date.now());
-      if (totalMsRef.current === 0) totalMsRef.current = ms;
-      setRemainingMs(ms);
-      setSecondsLeft(Math.round(ms / 1000));
-    };
+    const tick = () => setRemainingMs(Math.max(0, wordChoices.deadline - (Date.now() + clockOffsetMs)));
     tick();
     const interval = setInterval(tick, 200);
     return () => clearInterval(interval);
-  }, [wordChoices]);
+  }, [wordChoices, clockOffsetMs]);
 
   // Only the drawer's client ever receives `wordChoices` (server sends it as
   // a private emit) — its mere presence during the wordChoice phase is what
@@ -69,8 +59,8 @@ export function WordChoiceOverlay() {
         {wordChoices ? (
           <>
             <div className="relative flex items-center justify-center">
-              <CountdownRing remainingMs={remainingMs} totalMs={totalMsRef.current} />
-              <span className="absolute font-mono text-sm font-bold text-on-surface">{secondsLeft}</span>
+              <CountdownRing remainingMs={remainingMs} totalMs={wordChoices.deadline - wordChoices.serverNow} />
+              <span className="absolute font-mono text-sm font-bold text-on-surface">{Math.round(remainingMs / 1000)}</span>
             </div>
             <div className="font-display text-lg font-bold text-on-surface">Pick a word</div>
             <div className="flex w-full flex-col gap-2">
