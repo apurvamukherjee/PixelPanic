@@ -18,24 +18,51 @@ function MaskedWordDisplay({
   maskedWord: string;
 }) {
   const justRevealedIndex = useGameStore((s) => s.justRevealedIndex);
-  const display = iKnowTheWord && word ? word.toUpperCase() : maskedWord;
+  const flipPosition = justRevealedIndex === null ? -1 : justRevealedIndex * 2;
 
+  if (iKnowTheWord && word) {
+    return (
+      <div
+        data-testid="masked-word"
+        className="break-words text-center font-display text-xl font-extrabold uppercase tracking-[0.2em] text-primary md:text-2xl"
+      >
+        {word}
+      </div>
+    );
+  }
+
+  // Words of a multi-word answer are separated by three spaces in the mask;
+  // each is kept unbreakable so a long phrase wraps between words on a
+  // phone instead of overflowing or splitting mid-word.
+  let offset = 0;
   return (
     <div
       data-testid="masked-word"
-      className={`text-center font-display text-2xl font-extrabold tracking-[0.25em] ${
-        iKnowTheWord ? "text-primary" : "text-on-surface"
-      }`}
+      className="flex flex-wrap justify-center gap-x-[1em] text-center font-display text-xl font-extrabold tracking-[0.2em] text-on-surface md:text-2xl"
     >
-      {iKnowTheWord
-        ? display
-        : display.split("").map((ch, i) => (
-            <span key={i} className={i === (justRevealedIndex ?? -1) * 2 ? "letter-flip inline-block" : "inline-block"}>
-              {ch}
-            </span>
-          ))}
+      {maskedWord.split("   ").map((part, wordIndex) => {
+        const start = offset;
+        offset += part.length + 3;
+        return (
+          <span key={wordIndex} className="whitespace-nowrap">
+            {part.split("").map((ch, i) => (
+              <span key={i} className={start + i === flipPosition ? "letter-flip inline-block" : "inline-block"}>
+                {ch === " " ? "\u00a0" : ch}
+              </span>
+            ))}
+          </span>
+        );
+      })}
     </div>
   );
+}
+
+// "3 + 5 letters" for "ice cream" — wordLength counts the space and any
+// punctuation, which read as one more letter to guess.
+function letterCounts(maskedWord: string): string {
+  const counts = maskedWord.split("   ").map((part) => part.replace(/[^\p{L}\p{N}_]/gu, "").length);
+  const total = counts.reduce((a, b) => a + b, 0);
+  return `${counts.join(" + ")} ${total === 1 ? "letter" : "letters"}`;
 }
 
 export function MaskedWordBanner() {
@@ -61,7 +88,7 @@ export function MaskedWordBanner() {
   return (
     <div
       key={`${turn.roundIndex}-${turn.turnIndexInRound}`}
-      className="turn-reveal glass flex flex-col gap-2 rounded-2xl p-3"
+      className="turn-reveal glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 md:gap-2 md:p-3"
     >
       {(turn.isBountyRound || turn.isMashupRound || turn.isReverseMode) && (
         <div className="flex flex-wrap justify-center gap-1.5">
@@ -82,20 +109,21 @@ export function MaskedWordBanner() {
           )}
         </div>
       )}
-      <div className="text-center font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/70">
-        Round {turn.roundIndex + 1} of {turn.totalRounds}
+      <div className="flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-widest">
+        <span className="text-on-surface-variant/70">
+          Round {turn.roundIndex + 1}/{turn.totalRounds}
+        </span>
+        {isDrawer ? (
+          <span className="text-secondary">
+            {turn.isReverseMode ? "You're guessing" : "You're drawing"}
+          </span>
+        ) : (
+          !iKnowTheWord && turn.maskedWord && (
+            <span className="text-on-surface-variant">{letterCounts(turn.maskedWord)}</span>
+          )
+        )}
       </div>
-      {isDrawer && (
-        <div className="text-center font-mono text-[10px] uppercase tracking-widest text-secondary">
-          {turn.isReverseMode ? "You're guessing this turn" : "You are drawing"}
-        </div>
-      )}
       <MaskedWordDisplay iKnowTheWord={iKnowTheWord} word={wordToShow} maskedWord={turn.maskedWord} />
-      {!iKnowTheWord && (
-        <div className="-mt-1 text-center font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-          {turn.wordLength} {turn.wordLength === 1 ? "letter" : "letters"}
-        </div>
-      )}
       <CountdownBar totalSec={drawTimeSec} />
     </div>
   );

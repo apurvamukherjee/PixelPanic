@@ -26,13 +26,22 @@ export function CountdownBar({ totalSec }: CountdownBarProps) {
   const isUrgent = remainingMs < 10_000;
 
   return (
-    <div className="h-2 w-full rounded-full bg-surface-variant overflow-hidden">
-      <div
-        className={`h-full rounded-full transition-[width] duration-200 ${
-          isUrgent ? "bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)]" : "bg-primary"
+    <div className="flex items-center gap-2">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-variant">
+        <div
+          className={`h-full rounded-full transition-[width] duration-200 ${
+            isUrgent ? "bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)]" : "bg-primary"
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span
+        className={`w-8 shrink-0 text-right font-mono text-xs font-bold tabular-nums ${
+          isUrgent ? "text-error" : "text-on-surface-variant"
         }`}
-        style={{ width: `${pct}%` }}
-      />
+      >
+        {Math.ceil(remainingMs / 1000)}s
+      </span>
     </div>
   );
 }
