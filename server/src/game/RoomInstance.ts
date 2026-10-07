@@ -76,7 +76,7 @@ const AVATAR_COLORS = [
 
 export type RoomJoinResult =
   | { ok: true; player: Player }
-  | { ok: false; code: "ROOM_FULL" | "NAME_TAKEN" };
+  | { ok: false; code: "ROOM_FULL" | "NAME_TAKEN" | "KICKED" };
 
 export class RoomInstance implements TournamentHost {
   readonly room: Room;
@@ -120,6 +120,8 @@ export class RoomInstance implements TournamentHost {
   // Guesser playerId -> their like/dislike of the drawer's current drawing.
   // Per-turn, cleared in startTurn — not carried across the game.
   private drawingRatings = new Map<string, "like" | "dislike">();
+  // Votekicked players can't walk straight back in with the same anonId.
+  private kickedAnonIds = new Set<string>();
 
   constructor(
     private io: Server,
@@ -171,6 +173,7 @@ export class RoomInstance implements TournamentHost {
   // ---- room membership ----
 
   join(socket: Socket, name: string, anonId: string, avatarId: string | null = null): RoomJoinResult {
+    if (this.kickedAnonIds.has(anonId)) return { ok: false, code: "KICKED" };
     const existing = this.room.players.find((p) => p.anonId === anonId);
     if (existing) {
       const wasDisconnected = !existing.connected;
@@ -1394,19 +1397,28 @@ export class RoomInstance implements TournamentHost {
     }
   }
 
+  // Detaches the kicked socket from the room rather than disconnecting it:
+  // a server-side disconnect left the client's socket.io stuck (it never
+  // auto-reconnects after one) with a stale room on screen. ROOM_CLOSED
+  // reuses the client's existing "bounce home with a message" flow.
   private forceKick(target: Player): void {
-    const socket = this.io.sockets.sockets.get(target.id);
-    socket?.leave(this.room.id);
-    socket?.disconnect(true);
-
     const wasDrawer = this.isActiveDrawer(target.id);
     const wasHost = this.room.hostId === target.id;
 
+    this.kickedAnonIds.add(target.anonId);
     this.cancelGraceTimer(target.anonId);
     this.room.players = this.room.players.filter((p) => p.id !== target.id);
     delete this.game.scoreboard[target.id];
-    this.pushSystemChat(`${target.name} was votekicked.`);
 
+    this.emitTo(target.id, ServerEvents.ROOM_CLOSED, {
+      reason: "You were votekicked from the room.",
+    } satisfies RoomClosedPayload);
+    const socket = this.io.sockets.sockets.get(target.id);
+    socket?.leave(this.room.id);
+    if (target.teamId) socket?.leave(this.teamRoomKey(target.teamId));
+    if (socket) socket.data.roomId = undefined;
+
+    this.pushSystemChat(`${target.name} was votekicked.`);
     if (wasHost) this.transferHost();
     if (wasDrawer) this.endTurn();
     else this.endTurnIfEveryoneGuessed();

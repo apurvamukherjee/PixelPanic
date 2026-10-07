@@ -72,7 +72,7 @@ export class RoomManager {
     name: string,
     anonId: string,
     avatarId: string | null = null
-  ): { ok: true; room: RoomInstance } | { ok: false; code: "ROOM_NOT_FOUND" | "ROOM_FULL" | "NAME_TAKEN" } {
+  ): { ok: true; room: RoomInstance } | { ok: false; code: "ROOM_NOT_FOUND" | "ROOM_FULL" | "NAME_TAKEN" | "KICKED" } {
     const room = this.rooms.get(roomId.toUpperCase());
     if (!room) return { ok: false, code: "ROOM_NOT_FOUND" };
 
