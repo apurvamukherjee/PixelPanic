@@ -29,6 +29,9 @@ interface TrackedFill {
 
 type CommittedItem = TrackedStroke | TrackedFill;
 
+// Matches DrawingCanvas's bg-white — the canvases themselves are transparent.
+const CANVAS_BACKGROUND = "#ffffff";
+
 // Renders every stroke event coming back from the server — including the
 // drawer's own strokes, since `io.to(room).emit` echoes to the sender too.
 // A single source of truth avoids double-rendering the drawer's own lines.
@@ -152,10 +155,10 @@ export class StrokeRenderer {
   private renderLiveLayer(): void {
     const { width, height } = this.getCanvasSize();
     this.liveCtx.clearRect(0, 0, width, height);
-    for (const s of this.active.values()) this.drawStrokeOnto(this.liveCtx, s);
+    for (const s of this.active.values()) this.drawStrokeOnto(this.liveCtx, s, true);
   }
 
-  private drawStrokeOnto(ctx: CanvasRenderingContext2D, s: TrackedStroke): void {
+  private drawStrokeOnto(ctx: CanvasRenderingContext2D, s: TrackedStroke, isLivePreview = false): void {
     const { width, height } = this.getCanvasSize();
     const pixelPoints = s.points.map((p) => ({
       x: p.x * width,
@@ -168,7 +171,13 @@ export class StrokeRenderer {
     const path = strokeToPath2D(pixelPoints, pxSize);
 
     ctx.save();
-    if (s.tool === "eraser") {
+    if (s.tool === "eraser" && isLivePreview) {
+      // destination-out on the (empty) live layer erases nothing visible, so
+      // an in-progress eraser stroke showed no feedback until pointer-up.
+      // Painting the canvas background color reads identically.
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = CANVAS_BACKGROUND;
+    } else if (s.tool === "eraser") {
       ctx.globalCompositeOperation = "destination-out";
       ctx.fillStyle = "rgba(0,0,0,1)";
     } else {
