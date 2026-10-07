@@ -24,6 +24,10 @@ export function attachStrokeCapture(
   let rafHandle: number | null = null;
   let strokeStartTime = 0;
   let drawing = false;
+  // Only the pointer that started the stroke may continue or end it. A second
+  // finger or a resting palm used to start a new stroke mid-stroke, orphaning
+  // the first one in every client's live layer.
+  let activePointerId: number | null = null;
   // Set for the duration of a shape-tool drag (rect/ellipse/arrow) — the
   // point the drag started from, and the full outline is recomputed from it
   // on every move instead of appending like a freehand stroke.
@@ -55,6 +59,7 @@ export function attachStrokeCapture(
   function handlePointerDown(e: PointerEvent) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
+    if (drawing) return;
 
     const tool = callbacks.getTool();
 
@@ -67,6 +72,7 @@ export function attachStrokeCapture(
     }
 
     canvas.setPointerCapture(e.pointerId);
+    activePointerId = e.pointerId;
     drawing = true;
     strokeStartTime = performance.now();
     strokeId = uuidv4();
@@ -82,7 +88,7 @@ export function attachStrokeCapture(
   }
 
   function handlePointerMove(e: PointerEvent) {
-    if (!drawing || !strokeId) return;
+    if (!drawing || !strokeId || e.pointerId !== activePointerId) return;
     const point = toNormalizedPoint(e);
     if (activeShapeTool && shapeAnchor) {
       // Replace, don't accumulate — the whole outline is recomputed from
@@ -96,7 +102,7 @@ export function attachStrokeCapture(
   }
 
   function handlePointerUp(e: PointerEvent) {
-    if (!drawing || !strokeId) return;
+    if (!drawing || !strokeId || e.pointerId !== activePointerId) return;
     const point = toNormalizedPoint(e);
     if (activeShapeTool && shapeAnchor) {
       buffer = buildShapeOutline(activeShapeTool, shapeAnchor, point, point.t);
@@ -106,6 +112,7 @@ export function attachStrokeCapture(
     flush();
     callbacks.onEnd(strokeId);
     drawing = false;
+    activePointerId = null;
     strokeId = null;
     shapeAnchor = null;
     activeShapeTool = null;
