@@ -47,6 +47,12 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       }
     });
     socket.on("disconnect", () => set({ status: "disconnected" }));
+    // Mobile browsers freeze background tabs; the dead connection otherwise
+    // isn't noticed until socket.io's ping timeout, well past the server's
+    // 20s reconnect grace period. Reconnect as soon as the tab is back.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && !socket.connected) socket.connect();
+    });
 
     set({ socket });
     return socket;
