@@ -31,22 +31,16 @@ export function DrawingRating() {
   };
 
   return (
-    <div className="glass flex items-center justify-center gap-4 rounded-2xl px-4 py-2">
-      {isDrawer ? (
-        <span className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
-          Reactions to your drawing:
-        </span>
-      ) : (
-        <span className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
-          Rate this drawing:
-        </span>
-      )}
+    <div className="glass flex items-center justify-between gap-3 rounded-2xl px-3 py-1 md:justify-center md:py-2">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant md:text-xs">
+        {isDrawer ? "Reactions" : "Rate this drawing"}
+      </span>
       <div className="flex items-center gap-1.5">
         <button
           disabled={isDrawer}
           onClick={() => rate("like")}
           title="Like this drawing"
-          className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs transition-colors ${
+          className={`flex min-h-9 items-center gap-1 rounded-full px-3 py-1 font-mono text-xs transition-colors ${
             myRating === "like" ? "bg-success/25 text-success" : "text-on-surface-variant hover:text-success"
           } ${isDrawer ? "cursor-default" : ""}`}
         >
@@ -57,7 +51,7 @@ export function DrawingRating() {
           disabled={isDrawer}
           onClick={() => rate("dislike")}
           title="Dislike this drawing"
-          className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs transition-colors ${
+          className={`flex min-h-9 items-center gap-1 rounded-full px-3 py-1 font-mono text-xs transition-colors ${
             myRating === "dislike" ? "bg-error/25 text-error" : "text-on-surface-variant hover:text-error"
           } ${isDrawer ? "cursor-default" : ""}`}
         >
