@@ -1,7 +1,7 @@
 import type { Server, Socket } from "socket.io";
 import { ServerEvents, type RoomVisibility, type WordPack } from "@pixelpanic/shared";
 import { RoomInstance } from "./RoomInstance.js";
-import { generateUniqueRoomCode } from "../rooms/roomCodes.js";
+import { generateUniqueRoomCode, normalizeRoomCode } from "../rooms/roomCodes.js";
 import { getWordPack } from "../db/wordPacksRepo.js";
 import { DEFAULT_WORD_PACK_ID } from "../db/seedWords.js";
 import { getExistingRivalAnonId } from "../db/rivalsRepo.js";
@@ -73,7 +73,7 @@ export class RoomManager {
     anonId: string,
     avatarId: string | null = null
   ): { ok: true; room: RoomInstance } | { ok: false; code: "ROOM_NOT_FOUND" | "ROOM_FULL" | "NAME_TAKEN" | "KICKED" } {
-    const room = this.rooms.get(roomId.toUpperCase());
+    const room = this.rooms.get(normalizeRoomCode(roomId));
     if (!room) return { ok: false, code: "ROOM_NOT_FOUND" };
 
     // Reconnecting into the SAME room (the common case — anonId already a
