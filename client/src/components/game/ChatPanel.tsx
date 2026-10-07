@@ -42,11 +42,16 @@ export function ChatPanel() {
   // Only auto-scroll when the user was already at (or near) the bottom —
   // otherwise a fast-moving guess feed yanks them away mid-read. If they've
   // scrolled up, new messages just bump a "jump to latest" pill instead.
+  // Counted against the previous length so merely scrolling up (which flips
+  // isPinnedToBottom) doesn't register as a new message.
+  const prevLengthRef = useRef(visibleMessages.length);
   useEffect(() => {
+    const added = visibleMessages.length - prevLengthRef.current;
+    prevLengthRef.current = visibleMessages.length;
     if (isPinnedToBottom) {
       bottomRef.current?.scrollIntoView({ block: "end" });
-    } else {
-      setUnseenCount((n) => n + 1);
+    } else if (added > 0) {
+      setUnseenCount((n) => n + added);
     }
   }, [visibleMessages.length, isPinnedToBottom]);
 
