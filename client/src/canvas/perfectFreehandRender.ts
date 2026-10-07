@@ -1,5 +1,5 @@
 import { getStroke } from "perfect-freehand";
-import { SHAPE_TOOLS, type DrawTool } from "@pixelpanic/shared";
+import type { DrawTool } from "@pixelpanic/shared";
 
 export interface PixelStrokePoint {
   x: number;
@@ -27,11 +27,8 @@ function getSvgPathFromStroke(stroke: number[][]): string {
 }
 
 // Only the brush varies width with pressure/speed. Pencil and eraser keep a
-// constant width (previously pencil and brush rendered identically), and
-// shapes also skip smoothing/streamline, which rounded off rectangle corners
-// and made one side visibly thinner than the other.
+// constant width (previously pencil and brush rendered identically).
 function strokeOptions(tool: DrawTool) {
-  if (SHAPE_TOOLS.has(tool)) return { thinning: 0, smoothing: 0, streamline: 0 };
   if (tool === "brush") return { thinning: 0.6, smoothing: 0.5, streamline: 0.5 };
   return { thinning: 0, smoothing: 0.5, streamline: 0.4 };
 }

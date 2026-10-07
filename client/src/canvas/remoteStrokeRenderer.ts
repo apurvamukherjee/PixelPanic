@@ -168,6 +168,22 @@ export class StrokeRenderer {
     // `size` is a normalized 1..40 unit; scale relative to a 600px baseline
     // width so brush thickness looks consistent across canvas sizes.
     const pxSize = (s.size / 600) * width;
+
+    // Shapes are exact outlines: perfect-freehand's curve smoothing turned a
+    // 5-point rectangle into a rounded blob, so they're stroked as polylines.
+    if (SHAPE_TOOLS.has(s.tool)) {
+      ctx.save();
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = Math.max(1, pxSize);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      pixelPoints.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
     const path = strokeToPath2D(pixelPoints, pxSize, s.tool);
 
     ctx.save();
