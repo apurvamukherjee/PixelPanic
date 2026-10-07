@@ -1,4 +1,3 @@
-import { getTitleName } from "@pixelpanic/shared";
 import { db } from "./connection.js";
 import { getAnonStats, type AnonStatsRow } from "./statsRepo.js";
 
@@ -49,11 +48,4 @@ export function checkAndUnlockTitles(anonId: string): string[] {
     }
   }
   return newlyUnlocked;
-}
-
-export function listUnlockedTitles(anonId: string): { id: string; name: string; unlockedAt: number }[] {
-  const rows = db
-    .prepare(`SELECT title_id, unlocked_at FROM unlocked_titles WHERE anon_id = ? ORDER BY unlocked_at ASC`)
-    .all(anonId) as { title_id: string; unlocked_at: number }[];
-  return rows.map((r) => ({ id: r.title_id, name: getTitleName(r.title_id), unlockedAt: r.unlocked_at }));
 }

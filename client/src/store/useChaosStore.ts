@@ -16,7 +16,6 @@ interface ChaosStoreState {
   nearMissPulse: { playerId: string; signal: number } | null;
   setPendingPowerup: (powerup: SabotagePowerup | null) => void;
   applyEffect: (payload: SabotageEffectAppliedPayload) => void;
-  clearExpiredEffect: () => void;
   triggerNearMissPulse: (playerId: string) => void;
   reset: () => void;
 }
@@ -43,11 +42,6 @@ export const useChaosStore = create<ChaosStoreState>((set, get) => ({
       }
     }, payload.durationMs + 50);
   },
-
-  clearExpiredEffect: () =>
-    set((state) =>
-      state.activeEffect && state.activeEffect.expiresAt <= Date.now() ? { activeEffect: null } : {}
-    ),
 
   reset: () => set({ pendingPowerup: null, activeEffect: null, nearMissPulse: null }),
 }));

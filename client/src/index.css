@@ -42,24 +42,6 @@ body {
   border-radius: 10px;
 }
 
-@keyframes pulse-danger {
-  0% {
-    transform: scale(1);
-    text-shadow: 0 0 0px rgba(255, 180, 171, 0);
-  }
-  50% {
-    transform: scale(1.05);
-    text-shadow: 0 0 15px rgba(255, 180, 171, 0.8);
-  }
-  100% {
-    transform: scale(1);
-    text-shadow: 0 0 0px rgba(255, 180, 171, 0);
-  }
-}
-.timer-pulse {
-  animation: pulse-danger 1s infinite;
-}
-
 @keyframes bounce-in {
   0% {
     transform: scale(0.8);
