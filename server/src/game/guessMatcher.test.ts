@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isCorrectGuess, isNearMiss } from "./guessMatcher.js";
+import { isCorrectGuess, isNearMiss, containsWord } from "./guessMatcher.js";
 
 describe("isCorrectGuess", () => {
   it("matches exact words", () => {
@@ -59,5 +59,12 @@ describe("punctuation in answers", () => {
     expect(isCorrectGuess("yoyo", "yo-yo")).toBe(true);
     expect(isCorrectGuess("yo yo", "yo-yo")).toBe(true);
     expect(isCorrectGuess("yo-yo!", "yo-yo")).toBe(true);
+  });
+});
+
+describe("containsWord", () => {
+  it("finds the word inside a longer message, ignoring spacing and punctuation", () => {
+    expect(containsWord("lol it's an ICE-CREAM", "ice cream")).toBe(true);
+    expect(containsWord("nice drawing", "ice cream")).toBe(false);
   });
 });

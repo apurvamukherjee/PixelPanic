@@ -48,7 +48,7 @@ import {
 import { WordSelector } from "./WordSelector.js";
 import { computeHintSchedule, buildMaskedWord } from "./HintScheduler.js";
 import { ScoreEngine } from "./ScoreEngine.js";
-import { isCorrectGuess, isNearMiss } from "./guessMatcher.js";
+import { containsWord, isCorrectGuess, isNearMiss } from "./guessMatcher.js";
 import { initialTurnIndices, nextTurnIndices } from "./TurnStateMachine.js";
 import { buildTeamInterleavedRotation } from "./TeamRotation.js";
 import { TournamentInstance, type TournamentHost } from "./TournamentInstance.js";
@@ -1108,6 +1108,23 @@ export class RoomInstance implements TournamentHost {
       }
     }
 
+    // The drawer, anyone who already guessed it, and (in reverse mode) every
+    // non-drawer can see the word — without this they could simply type it
+    // into chat (room or team) for everyone else to read.
+    if (turn?.phase === "drawing" && turn.word && this.knowsWord(player.id, turn) && containsWord(trimmed, turn.word)) {
+      this.emitTo(player.id, ServerEvents.CHAT_MESSAGE, {
+        id: randomUUID(),
+        playerId: "system",
+        playerName: "System",
+        text: "No spoilers — that message contained the word, so only you can see this.",
+        ts: Date.now(),
+        kind: "system",
+        channel: "room",
+        teamId: null,
+      } satisfies ChatMessage);
+      return;
+    }
+
     // Word mashup: non-winning guesses typed during the drawing phase are
     // the "candidate interpretations" the room votes on after the turn ends.
     if (!isTeamChannel && turn?.isMashupRound && turn.phase === "drawing" && player.id !== turn.drawerId) {
@@ -1247,6 +1264,11 @@ export class RoomInstance implements TournamentHost {
       );
     }
     return this.room.players.filter((p) => p.connected && p.id !== drawerId);
+  }
+
+  private knowsWord(playerId: string, turn: TurnState): boolean {
+    if (turn.isReverseMode) return playerId !== turn.drawerId;
+    return playerId === turn.drawerId || turn.correctGuesserIds.includes(playerId);
   }
 
   private isEligibleGuesser(playerId: string): boolean {

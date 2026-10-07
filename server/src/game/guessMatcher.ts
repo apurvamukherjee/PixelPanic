@@ -19,6 +19,12 @@ export function isCorrectGuess(guess: string, word: string): boolean {
   return g.replace(/ /g, "") === w.replace(/ /g, "");
 }
 
+// For chat from players who already know the word: catches it embedded in a
+// longer message too ("its a cat lol"), with spaces/punctuation ignored.
+export function containsWord(text: string, word: string): boolean {
+  return normalize(text).replace(/ /g, "").includes(normalize(word).replace(/ /g, ""));
+}
+
 function levenshtein(a: string, b: string): number {
   const rows = a.length + 1;
   const cols = b.length + 1;

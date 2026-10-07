@@ -112,6 +112,11 @@ describe("socket game flow", () => {
     expect((await drawerTurn).turn.word).toBe(words[0]);
     expect((await guesserTurn).turn.word).toBeNull();
 
+    // The drawer can't spoil the word in chat.
+    const leaked = never(b, ServerEvents.CHAT_MESSAGE);
+    a.emit(ClientEvents.CHAT_MESSAGE, { text: `it's ${words[0]}!` });
+    await leaked;
+
     const wrong = once(b, ServerEvents.WRONG_GUESS);
     b.emit(ClientEvents.CHAT_MESSAGE, { text: "zzzzzzzzzzzz" });
     await wrong;
