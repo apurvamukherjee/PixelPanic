@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { io, Socket } from "socket.io-client";
 import { ClientEvents } from "@pixelpanic/shared";
 import { useRoomStore } from "./useRoomStore";
-import { getAnonId, getSavedName } from "../lib/anonId";
+import { getAnonId, getSavedName, getSavedAvatarId } from "../lib/anonId";
 
 type ConnectionStatus = "idle" | "connecting" | "connected" | "disconnected";
 
@@ -38,7 +38,12 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       // explicitly by HomePage/JoinByLinkRedirect.
       const { room } = useRoomStore.getState();
       if (room) {
-        socket.emit(ClientEvents.ROOM_JOIN, { roomId: room.id, name: getSavedName(), anonId: getAnonId() });
+        socket.emit(ClientEvents.ROOM_JOIN, {
+          roomId: room.id,
+          name: getSavedName(),
+          anonId: getAnonId(),
+          avatarId: getSavedAvatarId(),
+        });
       }
     });
     socket.on("disconnect", () => set({ status: "disconnected" }));

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ClientEvents } from "@pixelpanic/shared";
 import { useConnectionStore } from "../store/useConnectionStore";
 import { useRoomStore } from "../store/useRoomStore";
-import { getAnonId, getSavedName, saveName } from "../lib/anonId";
+import { getAnonId, getSavedName, saveName, getSavedAvatarId } from "../lib/anonId";
 import { Button } from "../components/shared/Button";
 
 interface JoinByLinkRedirectProps {
@@ -30,7 +30,7 @@ export function JoinByLinkRedirect({ code }: JoinByLinkRedirectProps) {
     clearError();
     setJoining(true);
     const socket = ensureConnected();
-    socket.emit(ClientEvents.ROOM_JOIN, { roomId: code, name: trimmed, anonId: getAnonId() });
+    socket.emit(ClientEvents.ROOM_JOIN, { roomId: code, name: trimmed, anonId: getAnonId(), avatarId: getSavedAvatarId() });
   };
 
   return (
