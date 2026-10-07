@@ -84,7 +84,7 @@ export function Toolbar() {
   if (!isDrawer) return null;
 
   return (
-    <div className="glass flex flex-wrap items-center gap-3 rounded-2xl p-3">
+    <div className="glass flex flex-wrap items-center gap-2 rounded-2xl p-2 md:gap-3 md:p-3">
       {paletteFrozen && (
         <div className="w-full rounded-lg bg-tertiary/20 px-3 py-1.5 text-center font-mono text-[10px] uppercase tracking-wide text-tertiary">
           Sabotaged! Your palette is frozen for a few seconds.
@@ -115,7 +115,7 @@ export function Toolbar() {
           <button
             key={c}
             onClick={() => setColor(c)}
-            className={`h-6 w-6 rounded-full ring-2 ring-offset-2 ring-offset-surface-container transition-transform hover:scale-110 ${
+            className={`h-7 w-7 rounded-full ring-2 ring-offset-2 md:h-6 md:w-6 ring-offset-surface-container transition-transform hover:scale-110 ${
               color === c ? "ring-primary" : "ring-transparent"
             }`}
             style={{ backgroundColor: c }}
@@ -128,7 +128,7 @@ export function Toolbar() {
             rainbow ring instead of a plain circle — rather than a form
             control that looks out of place next to the presets. */}
         <label
-          className={`relative h-6 w-6 shrink-0 cursor-pointer overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-surface-container transition-transform hover:scale-110 ${
+          className={`relative h-7 w-7 shrink-0 cursor-pointer md:h-6 md:w-6 overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-surface-container transition-transform hover:scale-110 ${
             !COLORS.includes(color) ? "ring-primary" : "ring-white/20"
           }`}
           style={{ background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)" }}
@@ -164,6 +164,7 @@ export function Toolbar() {
         <button
           className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-primary"
           title="Undo"
+          aria-label="Undo"
           onClick={() => socket?.emit(ClientEvents.DRAW_UNDO)}
         >
           <Icon name="undo" />
@@ -171,12 +172,14 @@ export function Toolbar() {
         <button
           className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-error"
           title="Clear"
+          aria-label="Clear canvas"
           onClick={() => socket?.emit(ClientEvents.DRAW_CLEAR)}
         >
           <Icon name="delete" />
         </button>
+        {/* No keyboard on a phone/tablet, so the shortcut sheet is noise there. */}
         <button
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-secondary"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-secondary [@media(pointer:coarse)]:hidden"
           title="Keyboard shortcuts"
           onClick={() => setShowShortcuts((v) => !v)}
         >
