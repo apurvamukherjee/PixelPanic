@@ -80,7 +80,9 @@ export function DrawingCanvas() {
     rendererRef.current = renderer;
 
     function resizeCanvases() {
-      const dpr = window.devicePixelRatio || 1;
+      // Capped at 2: a 3x phone canvas has 2.25x the pixels of 2x for no
+      // visible gain on doodles, and every fill/undo replay pays for each one.
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
       const rect = container!.getBoundingClientRect();
       committedCanvas!.width = Math.round(rect.width * dpr);
       committedCanvas!.height = Math.round(rect.height * dpr);
