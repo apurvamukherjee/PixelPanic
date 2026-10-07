@@ -26,6 +26,23 @@ export function App() {
     };
   }, []);
 
+  // The on-screen keyboard shrinks only the *visual* viewport on iOS (Android
+  // honors interactive-widget=resizes-content in index.html instead), so the
+  // page used to scroll the canvas out of view while typing a guess. Sizing
+  // the shell to the visual viewport keeps canvas + chat input both visible.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const sync = () => {
+      if (Math.abs(viewport.scale - 1) > 0.01) return; // pinch-zoomed, leave it
+      document.documentElement.style.setProperty("--app-height", `${viewport.height}px`);
+      window.scrollTo(0, 0);
+    };
+    sync();
+    viewport.addEventListener("resize", sync);
+    return () => viewport.removeEventListener("resize", sync);
+  }, []);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
