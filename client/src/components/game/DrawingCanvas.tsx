@@ -7,7 +7,6 @@ import {
   type StrokeEndPayload,
   type DrawFillPayload,
   type DrawUndoPayload,
-  type DrawSnapshotPayload,
 } from "@pixelpanic/shared";
 import { useConnectionStore } from "../../store/useConnectionStore";
 import { useGameStore } from "../../store/useGameStore";
@@ -127,10 +126,6 @@ export function DrawingCanvas() {
       setHasMarkedCanvas(false);
     };
     const onUndo = (p: DrawUndoPayload) => !shouldHideForMe() && rendererRef.current?.handleUndo(p.strokeId);
-    // Private catch-up emit for a mid-game joiner/reconnect — see
-    // RoomInstance.catchUpNewcomer. Never fires for the current drawer (they
-    // have nothing to catch up on), so no shouldHideForMe() gate needed.
-    const onSnapshot = (p: DrawSnapshotPayload) => rendererRef.current?.handleSnapshot(p.ops);
 
     socket.on(ServerEvents.DRAW_STROKE_START, onStart);
     socket.on(ServerEvents.DRAW_STROKE_POINT, onPoints);
@@ -138,7 +133,6 @@ export function DrawingCanvas() {
     socket.on(ServerEvents.DRAW_FILL, onFill);
     socket.on(ServerEvents.DRAW_CLEAR, onClear);
     socket.on(ServerEvents.DRAW_UNDO, onUndo);
-    socket.on(ServerEvents.DRAW_SNAPSHOT, onSnapshot);
 
     return () => {
       socket.off(ServerEvents.DRAW_STROKE_START, onStart);
@@ -147,9 +141,19 @@ export function DrawingCanvas() {
       socket.off(ServerEvents.DRAW_FILL, onFill);
       socket.off(ServerEvents.DRAW_CLEAR, onClear);
       socket.off(ServerEvents.DRAW_UNDO, onUndo);
-      socket.off(ServerEvents.DRAW_SNAPSHOT, onSnapshot);
     };
   }, [socket]);
+
+  // Mid-game join/reconnect catch-up (RoomInstance.catchUpNewcomer), buffered
+  // in the store because it can arrive before this component mounts. Never
+  // sent to the current drawer, so no shouldHideForMe() gate needed.
+  const pendingSnapshot = useGameStore((s) => s.pendingSnapshot);
+  useEffect(() => {
+    if (!pendingSnapshot || !rendererRef.current) return;
+    rendererRef.current.handleSnapshot(pendingSnapshot);
+    setHasMarkedCanvas(true);
+    useGameStore.getState().setPendingSnapshot(null);
+  }, [pendingSnapshot]);
 
   useEffect(() => {
     if (!isDrawer || !socket) return;

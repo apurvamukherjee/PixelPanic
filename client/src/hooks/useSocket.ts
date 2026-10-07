@@ -26,6 +26,7 @@ import {
   type MashupVoteResultPayload,
   type RivalOnlineChangedPayload,
   type RoomClosedPayload,
+  type DrawSnapshotPayload,
 } from "@pixelpanic/shared";
 import { resetRoomScopedState } from "../lib/resetRoomState";
 import { useConnectionStore } from "../store/useConnectionStore";
@@ -208,6 +209,9 @@ export function useSocket() {
         teamId: null,
       });
     };
+    const onDrawSnapshot = (payload: DrawSnapshotPayload) => {
+      useGameStore.getState().setPendingSnapshot(payload.ops);
+    };
     const onRivalOnlineChanged = (payload: RivalOnlineChangedPayload) => {
       useRivalStore.getState().setOnline(payload.rivalOnline);
     };
@@ -224,6 +228,7 @@ export function useSocket() {
     socket.on(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
     socket.on(ServerEvents.MASHUP_VOTE_RESULT, onMashupVoteResult);
     socket.on(ServerEvents.RIVAL_ONLINE_CHANGED, onRivalOnlineChanged);
+    socket.on(ServerEvents.DRAW_SNAPSHOT, onDrawSnapshot);
 
     const onTournamentState = (payload: TournamentStatePayload) => {
       useTournamentStore.getState().applyTournamentState(payload.tournament);
@@ -260,6 +265,7 @@ export function useSocket() {
       socket.off(ServerEvents.SABOTAGE_EFFECT_APPLIED, onSabotageEffect);
       socket.off(ServerEvents.MASHUP_VOTE_RESULT, onMashupVoteResult);
       socket.off(ServerEvents.RIVAL_ONLINE_CHANGED, onRivalOnlineChanged);
+      socket.off(ServerEvents.DRAW_SNAPSHOT, onDrawSnapshot);
     };
   }, [ensureConnected]);
 }

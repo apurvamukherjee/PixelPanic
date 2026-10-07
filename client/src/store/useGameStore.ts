@@ -9,6 +9,7 @@ import type {
   ScoreUpdatePayload,
   WordChoicesPayload,
   DrawingRatingUpdatePayload,
+  CommittedDrawOp,
 } from "@pixelpanic/shared";
 
 interface GameState {
@@ -42,6 +43,10 @@ interface GameState {
   // Live like/dislike tally for the current turn's drawing — reset by the
   // server (and here) at the start of every turn.
   drawingRating: DrawingRatingUpdatePayload;
+  // Catch-up drawing for a mid-game join/reconnect. DRAW_SNAPSHOT lands in
+  // the same burst as the phase change that mounts the canvas, i.e. before
+  // DrawingCanvas has subscribed, so it waits here until the canvas takes it.
+  pendingSnapshot: CommittedDrawOp[] | null;
 
   applyPhaseChange: (phase: GamePhase) => void;
   applyWordChoices: (payload: WordChoicesPayload) => void;
@@ -53,6 +58,7 @@ interface GameState {
   applyGameEnd: (payload: GameEndPayload) => void;
   applyDrawingRatingUpdate: (payload: DrawingRatingUpdatePayload) => void;
   markGuessedCorrectly: (word: string) => void;
+  setPendingSnapshot: (ops: CommittedDrawOp[] | null) => void;
   reset: () => void;
 }
 
@@ -73,6 +79,7 @@ export const useGameStore = create<GameState>((set) => ({
   revealedIndices: [],
   justRevealedIndex: null,
   drawingRating: { likes: 0, dislikes: 0 },
+  pendingSnapshot: null,
 
   applyPhaseChange: (phase) => set({ phase }),
 
@@ -140,6 +147,8 @@ export const useGameStore = create<GameState>((set) => ({
 
   markGuessedCorrectly: (word) => set({ iGuessedThisTurn: true, revealedWordForMe: word }),
 
+  setPendingSnapshot: (ops) => set({ pendingSnapshot: ops }),
+
   reset: () =>
     set({
       phase: "lobby",
@@ -158,5 +167,6 @@ export const useGameStore = create<GameState>((set) => ({
       revealedIndices: [],
       justRevealedIndex: null,
       drawingRating: { likes: 0, dislikes: 0 },
+      pendingSnapshot: null,
     }),
 }));
