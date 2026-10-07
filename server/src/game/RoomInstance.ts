@@ -505,7 +505,7 @@ export class RoomInstance implements TournamentHost {
 
   startGame(requesterId: string): void {
     if (requesterId !== this.room.hostId) return;
-    if (this.tournament) return;
+    if (this.game.isGameActive || this.tournament) return;
     const connectedCount = this.room.players.filter((p) => p.connected).length;
     if (connectedCount < 2) return;
 
