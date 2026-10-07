@@ -41,11 +41,9 @@ export function TeamAssignmentPanel() {
   };
 
   return (
-    <div className="panel flex flex-col gap-3 rounded-2xl p-4">
+    <div className="panel flex flex-col gap-3 rounded-3xl p-4">
       <div className="flex items-center justify-between">
-        <div className="font-display text-sm font-bold uppercase tracking-wide text-on-surface-variant">
-          Teams
-        </div>
+        <h2 className="hand text-xl font-bold text-on-surface">Teams</h2>
         {isHost && !editingTeams && (
           <button className="font-mono text-xs text-primary hover:underline" onClick={startEditing}>
             Edit teams
@@ -70,7 +68,8 @@ export function TeamAssignmentPanel() {
                 }
               />
               <button
-                className="text-xs text-on-surface-variant hover:text-error"
+                className="flex h-9 w-9 items-center justify-center text-on-surface-variant hover:text-error"
+                aria-label={`Remove ${name || "team"}`}
                 onClick={() => removeTeamSlot(i)}
               >
                 <Icon name="close" />

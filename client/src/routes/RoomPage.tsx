@@ -14,6 +14,7 @@ import { GameScreen } from "../components/game/GameScreen";
 import { LeaderboardScreen } from "../components/endgame/LeaderboardScreen";
 import { TournamentStandingsScreen } from "../components/endgame/TournamentStandingsScreen";
 import { Button } from "../components/shared/Button";
+import { Icon } from "../components/shared/Icon";
 
 export function RoomPage() {
   const code = useRoomFromUrl();
@@ -61,63 +62,80 @@ export function RoomPage() {
   }
 
   const shareUrl = `${window.location.origin}/room/${room.id}`;
-  const copyLink = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const canShare = typeof navigator.share === "function";
+  // Native share sheet on phones; clipboard elsewhere. navigator.clipboard
+  // only exists on secure origins, so over plain-http LAN (how phones reach
+  // a dev server) the old copy button threw — fall back to a prompt there.
+  const shareInvite = async () => {
+    if (canShare) {
+      try {
+        await navigator.share({ title: "Pixelpanic", text: `Join my Pixelpanic room: ${room.id}`, url: shareUrl });
+      } catch (err) {
+        if (!(err instanceof DOMException && err.name === "AbortError")) console.warn("Share failed", err);
+      }
+      return;
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+    window.prompt("Copy this invite link", shareUrl);
   };
 
-  // Desktop: a fixed two-column grid (settings left, player list + start
-  // action pinned right) that fills the viewport with no page-level scroll —
-  // only the settings column scrolls internally if it overflows. Mobile
-  // keeps the simple stacked flow (settings, then players, then actions).
+  const connectedCount = room.players.filter((p) => p.connected).length;
+  const hostName = room.players.find((p) => p.isHost)?.name ?? "the host";
+
+  // Phones: one scrolling column (code, players, settings) with the start
+  // actions pinned to the bottom. Desktop: settings left, players right.
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-3 overflow-y-auto p-3 pt-4 md:grid md:grid-cols-[1fr_300px] md:gap-4 md:overflow-hidden md:p-4">
-      <div className="flex min-h-0 flex-col gap-3 md:overflow-y-auto md:pr-1">
-        <div className="panel rounded-2xl p-6 text-center">
-          <div className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
-            Room code
-          </div>
-          <div
-            data-testid="room-code"
-            className="font-display text-4xl font-extrabold tracking-widest text-primary"
-          >
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-3 overflow-y-auto px-3 md:grid md:grid-cols-[1fr_320px] md:grid-rows-[auto_1fr_auto] md:gap-4 md:overflow-hidden md:px-4 md:pb-4">
+      <section className="panel flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-3xl px-5 py-4 md:col-start-1 md:row-start-1">
+        <div>
+          <div className="text-sm text-on-surface-variant">Room code</div>
+          <div data-testid="room-code" className="hand text-5xl font-extrabold tracking-[0.12em] text-primary">
             {room.id}
           </div>
         </div>
-
-        <Button variant="secondary" onClick={copyLink}>
-          {copied ? "Link copied!" : "Copy share link"}
+        <Button variant="secondary" onClick={shareInvite}>
+          <span className="flex items-center gap-2">
+            <Icon name={canShare ? "ios_share" : "link"} className="!text-lg" />
+            {canShare ? "Invite friends" : copied ? "Link copied" : "Copy invite link"}
+          </span>
         </Button>
+      </section>
 
+      <section className="panel flex shrink-0 flex-col rounded-3xl p-4 md:col-start-2 md:row-span-2 md:row-start-1 md:min-h-0 md:overflow-y-auto">
+        <WaitingRoomList />
+      </section>
+
+      <div className="flex shrink-0 flex-col gap-3 md:col-start-1 md:row-span-2 md:row-start-2 md:min-h-0 md:overflow-y-auto md:pr-1">
         <HostSettingsPanel />
         <TeamAssignmentPanel />
       </div>
 
-      <div className="panel flex min-h-0 flex-col gap-3 rounded-2xl p-3 md:h-full">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <WaitingRoomList />
-        </div>
-
-        {isHost && (
-          <div className="flex shrink-0 flex-col gap-2 border-t border-white/5 pt-3">
-            <Button
-              onClick={() => socket?.emit(ClientEvents.GAME_START)}
-              disabled={room.players.filter((p) => p.connected).length < 2}
-            >
-              Start Game
+      <div className="sticky bottom-0 mt-auto flex shrink-0 flex-col gap-2 bg-background pb-3 pt-2 md:static md:col-start-2 md:row-start-3 md:bg-transparent md:p-0">
+        {isHost ? (
+          <>
+            {connectedCount < 2 && (
+              <p className="text-center text-sm text-on-surface-variant">Invite at least one friend to start.</p>
+            )}
+            <Button onClick={() => socket?.emit(ClientEvents.GAME_START)} disabled={connectedCount < 2}>
+              Start game
             </Button>
             <Button
               variant="secondary"
               onClick={() => socket?.emit(ClientEvents.TOURNAMENT_START)}
-              disabled={
-                room.players.filter((p) => p.connected).length < 2 ||
-                room.players.filter((p) => p.connected).length > 10
-              }
+              disabled={connectedCount < 2 || connectedCount > 10}
             >
-              Start Tournament
+              Start a tournament
             </Button>
-          </div>
+          </>
+        ) : (
+          <p className="panel rounded-2xl px-4 py-3 text-center text-on-surface-variant">
+            Waiting for <span className="font-bold text-on-surface">{hostName}</span> to start the game…
+          </p>
         )}
       </div>
     </div>

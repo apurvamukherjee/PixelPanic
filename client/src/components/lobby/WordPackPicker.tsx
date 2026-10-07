@@ -4,7 +4,7 @@ import type { WordPackSummary } from "../../lib/api";
 // Matches RoomInstance.updateSettings' server-side clamp on wordPackIds.
 const MAX_WORD_PACKS = 5;
 
-const SUBLABEL = "font-mono text-[11px] uppercase tracking-wide text-on-surface-variant";
+const SUBLABEL = "text-sm font-semibold text-on-surface-variant";
 
 interface WordPackPickerProps {
   packs: WordPackSummary[];

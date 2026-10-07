@@ -24,9 +24,9 @@ const CHAOS_MODE_INFO: { key: keyof ChaosModes; label: string; description: stri
 ];
 
 const FIELD =
-  "rounded-lg border border-white/10 bg-background px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary";
-const LABEL = "flex flex-col gap-1.5 text-sm font-medium text-on-surface";
-const SUBLABEL = "font-mono text-[11px] uppercase tracking-wide text-on-surface-variant";
+  "rounded-xl border-[1.5px] border-on-surface/15 bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface focus:border-secondary focus:outline-none";
+const LABEL = "flex flex-col gap-1.5 text-sm text-on-surface";
+const SUBLABEL = "text-sm font-semibold text-on-surface-variant";
 
 export function HostSettingsPanel() {
   const room = useRoomStore((s) => s.room);
@@ -46,19 +46,27 @@ export function HostSettingsPanel() {
 
   if (!isHost) {
     const activeChaos = CHAOS_MODE_INFO.filter((c) => room.settings.chaosModes[c.key]).map((c) => c.label);
+    const facts = [
+      `${room.settings.roundCount} ${room.settings.roundCount === 1 ? "round" : "rounds"}`,
+      `${room.settings.drawTimeSec}s to draw`,
+      `${room.settings.hintFrequency} hints`,
+      room.settings.mode === "team" ? "teams" : "solo",
+    ];
     return (
-      <div className="panel flex flex-col gap-1 rounded-2xl px-4 py-3 font-mono text-xs text-on-surface-variant">
-        <div>
-          Draw time: <span className="text-secondary">{room.settings.drawTimeSec}s</span> · Rounds:{" "}
-          <span className="text-secondary">{room.settings.roundCount}</span> · Hints:{" "}
-          <span className="text-secondary">{room.settings.hintFrequency}</span> · Mode:{" "}
-          <span className="text-secondary">{room.settings.mode}</span>
+      <div className="panel flex flex-col gap-2 rounded-3xl p-4">
+        <h2 className="hand text-xl font-bold text-on-surface">This game</h2>
+        <div className="flex flex-wrap gap-1.5">
+          {facts.map((fact) => (
+            <span key={fact} className="rounded-lg bg-surface-container-high px-2.5 py-1 text-sm text-on-surface">
+              {fact}
+            </span>
+          ))}
+          {activeChaos.map((label) => (
+            <span key={label} className="rounded-lg bg-tertiary/15 px-2.5 py-1 text-sm text-tertiary">
+              {label}
+            </span>
+          ))}
         </div>
-        {activeChaos.length > 0 && (
-          <div>
-            Chaos: <span className="text-tertiary">{activeChaos.join(", ")}</span>
-          </div>
-        )}
       </div>
     );
   }
@@ -89,10 +97,8 @@ export function HostSettingsPanel() {
   };
 
   return (
-    <div className="panel flex flex-col gap-4 rounded-2xl p-4">
-      <div className="font-display text-sm font-bold uppercase tracking-wide text-on-surface-variant">
-        Host settings
-      </div>
+    <div className="panel flex flex-col gap-4 rounded-3xl p-4">
+      <h2 className="hand text-xl font-bold text-on-surface">Game settings</h2>
 
       <label className={LABEL}>
         <span className={SUBLABEL}>Mode</span>
