@@ -19,6 +19,22 @@ html, body, #root {
   padding-right: max(0.75rem, env(safe-area-inset-right));
 }
 
+/* iOS Safari zooms the page in whenever a form control under 16px gets
+   focus (chat, settings, name fields). Flooring touch devices at 16px avoids
+   it without disabling pinch-zoom. !important beats the text-sm utilities. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+html {
+  /* No double-tap-to-zoom delay on taps (tools, swatches, guesses). */
+  touch-action: manipulation;
+}
+
 body {
   @apply bg-background text-on-background font-body;
   overscroll-behavior: none;
