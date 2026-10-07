@@ -36,6 +36,8 @@ event name and payload type consumed by both sides.
 npm install
 npm run dev         # server :3001 + client :5173, run together via concurrently
 npm run typecheck    # tsc --noEmit, server + client
+npm run lint          # eslint
+npm test              # vitest: unit tests + real-socket game tests (server/src/sockets/*.integration.test.ts)
 npm run build         # client build + server typecheck — should be clean before any change is considered done
 ```
 
@@ -196,7 +198,9 @@ Documented inline as comments in `RoomInstance.ts`, summarized here:
 - **Hints:** 4-tier `hintFrequency` (off/slow/normal/fast = 0/25/40/60% of
   letters), spaced evenly across 20%–90% of the turn, shuffled reveal order.
 - **Votekick:** majority of connected non-target players
-  (`ceil(eligibleVoters / 2)`); no host immunity.
+  (`ceil(eligibleVoters / 2)`); no host immunity. The kicked socket is
+  detached and sent `ROOM_CLOSED` (not disconnected), and its anonId is
+  refused on rejoin with `KICKED` for the life of the room.
 - **Quick-match:** first public lobby-phase room with a free slot, else
   create a new one — no skill/ELO matching.
 - **Disconnects:** drawer disconnect → turn ends immediately; guesser
@@ -279,11 +283,9 @@ bearing facts anyone touching this code needs:
   gameplay code (`WordSelector`, `RoomManager.resolveWordPacks`,
   `WordChoiceOverlay`) still only ever sees the original flat
   `WordPack.words: string[]`.
-- **Design system**: `design/DESIGN.md` (+ mockups) is a reference for
-  visual language only — colors/type/glassmorphism/component patterns are
-  real and applied throughout `client/src`; the mockups' fictional feature
-  content (XP/levels, Store, Gallery, public lobby browser) is not part of
-  this app and was intentionally not built.
+- **Design system**: superseded — see "Hardening, mobile & visual revamp"
+  below. `design/DESIGN.md`'s glassmorphism palette is no longer what
+  `client/src` uses.
 
 ## Phase 3 additions
 
@@ -526,3 +528,42 @@ above, no restructuring.
   chat, tournament, and chaos stores — called from both the voluntary leave
   path and the `ROOM_CLOSED` handler, rather than each call site clearing
   stores individually.
+
+## Hardening, mobile & visual revamp
+
+A bug-fix, performance, mobile and visual pass. Load-bearing facts:
+
+- **Socket boundary.** Every handler is wrapped at registration
+  (`sockets/index.ts` `guardHandlers`) — a throw inside a socket.io listener
+  used to crash the whole process. Stored/rebroadcast payloads (draw events,
+  room create/join ids) are validated in `sockets/validate.ts`; host settings
+  are validated in `RoomInstance.updateSettings` and locked while a game or
+  tournament runs. `chooseWord` only accepts one of the three offered words.
+- **Chat spoilers.** Anyone who already knows the word (drawer, correct
+  guessers, everyone but the drawer in reverse mode) can't post a message
+  containing it (`guessMatcher.containsWord`); they get a private notice.
+  Guess matching and the masked word ignore punctuation ("yo-yo").
+- **TURN_START is one emit per socket**: the room broadcast uses
+  `.except(drawerId)`; the drawer gets its own payload. `TURN_START` and
+  `WORD_CHOICES` carry `serverNow` so clients render deadlines against the
+  server clock from the first frame.
+- **DRAW_SNAPSHOT is buffered** in `useGameStore.pendingSnapshot` by
+  `useSocket` and applied when `DrawingCanvas` mounts — it arrives before the
+  canvas has subscribed. Undo pops `RoomInstance.committedOps` directly.
+- **Canvas perf**: live layer redraws at most once per animation frame,
+  scanline flood fill, DPR capped at 2, coalesced pointer events, points
+  rounded to 4 decimals, single active pointer per stroke. Pencil/eraser are
+  constant width, brush varies; shapes are stroked as exact polylines.
+- **Mobile.** App shell height tracks `visualViewport` (`--app-height`) plus
+  `interactive-widget=resizes-content`, so the keyboard doesn't hide the
+  canvas; the canvas width is capped by available height. Safe-area insets
+  are applied, inputs are 16px on touch (no iOS focus zoom), the game holds a
+  Screen Wake Lock, the socket reconnects on `visibilitychange`, and a reload
+  of `/room/:code` auto-rejoins with the saved name.
+- **Visual language: "chalkboard party."** Tokens in `tailwind.config.ts`
+  (slate-green board, chalk-white text, chalk yellow/blue/pink accents);
+  Shantell Sans for display (`.hand` turns on its informal/bounce axes),
+  Atkinson Hyperlegible Next for body. Cards are opaque `.panel` surfaces (no
+  backdrop-filter — too costly on phones); buttons have a pressable hard
+  edge. `Wordmark.tsx` is the lettered logotype. Prefer sentence-case labels
+  over tiny monospace caps.
