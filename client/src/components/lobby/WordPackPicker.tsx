@@ -94,7 +94,7 @@ export function WordPackPicker({ packs, selectedIds, onChange }: WordPackPickerP
 
 function PackGroupLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="px-2 pb-0.5 pt-1.5 font-mono text-[10px] uppercase tracking-wide text-on-surface-variant/70">
+    <div className="px-2 pb-0.5 pt-1.5 text-xs font-semibold text-on-surface-variant/70">
       {children}
     </div>
   );

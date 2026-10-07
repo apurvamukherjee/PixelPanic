@@ -75,7 +75,7 @@ function PlayerRow({
           {isMe ? " (you)" : ""}
         </span>
         {isDrawer && (
-          <span className="font-mono text-[9px] uppercase tracking-wide text-primary/70">Drawing…</span>
+          <span className="text-xs font-semibold text-primary/70">Drawing…</span>
         )}
       </div>
       {streak > 0 && (
@@ -139,7 +139,7 @@ export function PlayerList() {
   // Only ever non-zero on the drawer's own client — NEAR_MISS_PULSE is a
   // private emit that non-drawers never receive in the first place.
   const heatSignalOf = (p: Player) => (nearMissPulse?.playerId === p.id ? nearMissPulse.signal : 0);
-  const heading = "font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/60 px-1";
+  const heading = "text-xs font-semibold text-on-surface-variant/60 px-1";
 
   if (room.settings.mode === "team" && room.teams.length > 0) {
     const teamsSorted = [...room.teams].sort(

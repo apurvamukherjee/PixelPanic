@@ -32,7 +32,7 @@ export function RoundEndOverlay() {
     <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
       <div className="round-end-pop panel flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-6">
         <div className="text-center">
-          <div className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">The word was</div>
+          <div className="text-xs font-semibold text-on-surface-variant">The word was</div>
           <div className="font-display text-2xl font-extrabold capitalize text-primary">{lastRoundEnd.word}</div>
         </div>
 

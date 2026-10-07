@@ -197,7 +197,7 @@ export function DrawingCanvas() {
       // shrink-0 keeps the 4:3 canvas from being squeezed by its flex column.
       // Its width is capped by the available height (--app-height shrinks
       // when the phone keyboard opens) so the chat input below stays visible.
-      className="relative mx-auto aspect-[4/3] w-full shrink-0 touch-none select-none overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] max-w-[calc((var(--app-height,100dvh)-17rem)*4/3)] md:max-w-[calc((var(--app-height,100dvh)-19rem)*4/3)]"
+      className="relative mx-auto aspect-[4/3] w-full shrink-0 touch-none select-none overflow-hidden rounded-2xl border border-white/10 bg-white max-w-[calc((var(--app-height,100dvh)-17rem)*4/3)] md:max-w-[calc((var(--app-height,100dvh)-19rem)*4/3)]"
       style={blurActive ? { filter: "blur(6px)" } : undefined}
     >
       <canvas ref={committedRef} className="absolute inset-0 h-full w-full" style={hideOwnCanvas ? { opacity: 0 } : undefined} />
@@ -220,7 +220,7 @@ export function DrawingCanvas() {
       )}
       {isDrawer && drawPhase === "drawing" && !hasMarkedCanvas && !hideOwnCanvas && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-300">
-          <span className="font-display text-sm font-medium uppercase tracking-wide text-black/25">
+          <span className="hand text-lg text-black/25">
             Start drawing…
           </span>
         </div>

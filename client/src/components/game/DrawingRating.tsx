@@ -32,7 +32,7 @@ export function DrawingRating() {
 
   return (
     <div className="panel flex items-center justify-between gap-3 rounded-2xl px-3 py-1 md:justify-center md:py-2">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant md:text-xs">
+      <span className="text-xs font-semibold text-on-surface-variant md:text-xs">
         {isDrawer ? "Reactions" : "Rate this drawing"}
       </span>
       <div className="flex items-center gap-1.5">

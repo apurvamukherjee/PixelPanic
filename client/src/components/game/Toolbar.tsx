@@ -86,7 +86,7 @@ export function Toolbar() {
   return (
     <div className="panel flex flex-wrap items-center gap-2 rounded-2xl p-2 md:gap-3 md:p-3">
       {paletteFrozen && (
-        <div className="w-full rounded-lg bg-tertiary/20 px-3 py-1.5 text-center font-mono text-[10px] uppercase tracking-wide text-tertiary">
+        <div className="w-full rounded-lg bg-tertiary/20 px-3 py-1.5 text-center text-xs font-semibold text-tertiary">
           Sabotaged! Your palette is frozen for a few seconds.
         </div>
       )}
@@ -110,12 +110,12 @@ export function Toolbar() {
 
       <div className="hidden h-8 w-px bg-white/10 md:block" />
 
-      <div className={`flex flex-wrap items-center gap-1.5 ${paletteFrozen ? "pointer-events-none opacity-40" : ""}`}>
+      <div className={`flex flex-wrap items-center gap-1 md:gap-1.5 ${paletteFrozen ? "pointer-events-none opacity-40" : ""}`}>
         {COLORS.map((c) => (
           <button
             key={c}
             onClick={() => setColor(c)}
-            className={`h-7 w-7 rounded-full ring-2 ring-offset-2 md:h-6 md:w-6 ring-offset-surface-container transition-transform hover:scale-110 ${
+            className={`h-[26px] w-[26px] rounded-full ring-2 ring-offset-2 md:h-6 md:w-6 ring-offset-surface-container transition-transform hover:scale-110 ${
               color === c ? "ring-primary" : "ring-transparent"
             }`}
             style={{ backgroundColor: c }}
@@ -128,7 +128,7 @@ export function Toolbar() {
             rainbow ring instead of a plain circle — rather than a form
             control that looks out of place next to the presets. */}
         <label
-          className={`relative h-7 w-7 shrink-0 cursor-pointer md:h-6 md:w-6 overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-surface-container transition-transform hover:scale-110 ${
+          className={`relative h-[26px] w-[26px] shrink-0 cursor-pointer md:h-6 md:w-6 overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-surface-container transition-transform hover:scale-110 ${
             !COLORS.includes(color) ? "ring-primary" : "ring-white/20"
           }`}
           style={{ background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)" }}

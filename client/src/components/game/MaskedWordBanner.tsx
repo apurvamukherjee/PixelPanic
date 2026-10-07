@@ -93,23 +93,23 @@ export function MaskedWordBanner() {
       {(turn.isBountyRound || turn.isMashupRound || turn.isReverseMode) && (
         <div className="flex flex-wrap justify-center gap-1.5">
           {turn.isBountyRound && (
-            <span className="flex items-center gap-1 rounded-full bg-tertiary/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-tertiary">
+            <span className="flex items-center gap-1 rounded-full bg-tertiary/20 px-2 py-0.5 text-xs font-semibold text-tertiary">
               <Icon name="bolt" className="!text-xs" /> Bounty round · 5x points
             </span>
           )}
           {turn.isMashupRound && (
-            <span className="rounded-full bg-secondary/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-secondary">
+            <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-semibold text-secondary">
               Word mashup
             </span>
           )}
           {turn.isReverseMode && (
-            <span className="rounded-full bg-primary/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-primary">
+            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
               Reverse mode
             </span>
           )}
         </div>
       )}
-      <div className="flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-widest">
+      <div className="flex items-center justify-between gap-2 text-xs font-semibold">
         <span className="text-on-surface-variant/70">
           Round {turn.roundIndex + 1}/{turn.totalRounds}
         </span>

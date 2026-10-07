@@ -103,14 +103,18 @@ export function ChatPanel() {
 
   return (
     <div className="panel flex h-full min-h-0 flex-col rounded-2xl">
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
-        <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-          <Icon name="forum" className="!text-sm" /> Feed
+      {/* On phones the Chat tab above already labels this panel; the header
+          only earns its space there when it carries the team-channel toggle. */}
+      <div
+        className={`items-center justify-between border-b border-white/5 px-4 py-2.5 md:flex ${isTeamMode ? "flex" : "hidden"}`}
+      >
+        <span className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
+          <Icon name="forum" className="!text-sm" /> Chat
         </span>
         {isTeamMode && (
           <div className="flex gap-1 rounded-lg bg-surface-container-highest p-0.5">
             <button
-              className={`rounded-md px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide transition-colors ${
+              className={`rounded-md px-2 py-0.5 text-xs font-semibold transition-colors ${
                 channel === "room" ? "bg-primary text-on-primary" : "text-on-surface-variant"
               }`}
               onClick={() => setChannel("room")}
@@ -118,7 +122,7 @@ export function ChatPanel() {
               Room
             </button>
             <button
-              className={`rounded-md px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide transition-colors ${
+              className={`rounded-md px-2 py-0.5 text-xs font-semibold transition-colors ${
                 channel === "team" ? "bg-primary text-on-primary" : "text-on-surface-variant"
               }`}
               onClick={() => setChannel("team")}
@@ -139,7 +143,7 @@ export function ChatPanel() {
             return (
               <div key={m.id} className="my-1 flex items-center gap-2">
                 <div className="h-px flex-1 bg-white/10" />
-                <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                <span className="whitespace-nowrap text-xs font-semibold text-on-surface-variant">
                   {m.text}
                 </span>
                 <div className="h-px flex-1 bg-white/10" />
@@ -240,7 +244,7 @@ export function ChatPanel() {
               activeChannel === "team"
                 ? "Message your team…"
                 : isDrawer
-                  ? "You're drawing — chat is guess-only"
+                  ? "Chat with the room (no spoilers!)"
                   : "Type your guess…"
             }
             value={text}

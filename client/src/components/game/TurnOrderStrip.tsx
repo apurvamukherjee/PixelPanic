@@ -31,7 +31,7 @@ export function TurnOrderStrip() {
 
   return (
     <div className="panel flex items-center gap-2 overflow-x-auto rounded-2xl px-3 py-2">
-      <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/60">
+      <span className="shrink-0 text-xs font-semibold text-on-surface-variant/60">
         Up next
       </span>
       {upcoming.map((p, i) => (

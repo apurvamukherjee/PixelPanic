@@ -92,7 +92,7 @@ export function AppHeader() {
                   className={`h-2 w-2 rounded-full ${rival.rivalOnline ? "bg-success" : "bg-outline"}`}
                 />
                 <span className="font-display text-sm font-semibold text-on-surface">{rival.rivalName}</span>
-                <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-on-surface-variant">
+                <span className="ml-auto text-xs font-semibold text-on-surface-variant">
                   {rival.rivalOnline ? "online" : "offline"}
                 </span>
               </div>
@@ -110,7 +110,7 @@ function RivalStatRow({ label, mine, theirs, suffix = "" }: { label: string; min
   const winning = mine >= theirs;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-mono text-[10px] uppercase tracking-wide text-on-surface-variant">{label}</span>
+      <span className="text-xs font-semibold text-on-surface-variant">{label}</span>
       <div className="flex items-center justify-between font-mono text-xs">
         <span className={winning ? "text-success" : "text-on-surface"}>
           You: {mine}

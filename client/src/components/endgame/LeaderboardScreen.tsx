@@ -95,7 +95,7 @@ export function LeaderboardScreen() {
                     {titles.map((titleId) => (
                       <span
                         key={titleId}
-                        className="flex items-center gap-1 rounded-full bg-tertiary/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-tertiary"
+                        className="flex items-center gap-1 rounded-full bg-tertiary/20 px-2 py-0.5 text-xs font-semibold text-tertiary"
                       >
                         <Icon name="military_tech" className="!text-xs" />{" "}
                         {getTitleName(titleId)}

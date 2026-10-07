@@ -26,7 +26,7 @@ export function TournamentStandingsScreen() {
       <div className="panel overflow-x-auto rounded-2xl">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-surface-container-low text-left font-mono text-[10px] uppercase tracking-wide text-on-surface-variant">
+            <tr className="border-b border-white/5 bg-surface-container-low text-left text-xs font-semibold text-on-surface-variant">
               <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">Player</th>
               <th className="px-4 py-3 text-right">W</th>
