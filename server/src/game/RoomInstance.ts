@@ -730,7 +730,11 @@ export class RoomInstance implements TournamentHost {
     this.broadcast(ServerEvents.GAME_PHASE_CHANGE, { phase: "wordChoice" });
 
     const timeout = setTimeout(() => {
-      if (this.game.turn?.phase === "wordChoice") this.chooseWord(drawer.id, w1);
+      if (this.game.turn?.phase !== "wordChoice") return;
+      // A drawer who dropped mid-choice and never came back would otherwise
+      // get auto-assigned w1 and leave the room watching a blank canvas.
+      if (drawer.connected) this.chooseWord(drawer.id, w1);
+      else this.endTurn();
     }, WORD_CHOICE_TIMEOUT_MS);
     this.turnTimeouts.push(timeout);
   }
