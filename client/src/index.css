@@ -6,6 +6,19 @@ html, body, #root {
   height: 100%;
 }
 
+.app-shell {
+  height: 100dvh;
+  padding-top: calc(3.5rem + env(safe-area-inset-top));
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.app-header {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+
 body {
   @apply bg-background text-on-background font-body;
   overscroll-behavior: none;

@@ -38,7 +38,7 @@ export function AppHeader() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-start justify-between p-3">
+    <div className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-start justify-between p-3">
       <div className="pointer-events-auto glass rounded-full px-3 py-1.5">
         <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
           By <span className="text-secondary">Apurva</span>

@@ -29,7 +29,9 @@ export function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <div className="relative h-dvh w-full">
+        {/* Padding reserves the fixed AppHeader's height (plus the notch /
+            home-indicator safe areas) so no route renders underneath it. */}
+        <div className="app-shell relative w-full">
           <DoodleBackground />
           <AppHeader />
           <ReconnectToasts />
