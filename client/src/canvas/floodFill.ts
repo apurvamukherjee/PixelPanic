@@ -35,6 +35,10 @@ function hexToRgba(hex: string): [number, number, number, number] {
   return [r, g, b, 255];
 }
 
+// Scanline fill: walks whole horizontal runs and only seeds the rows above
+// and below once per contiguous run, instead of pushing four neighbors per
+// pixel — on a high-DPR phone canvas that was millions of stack entries per
+// fill, replayed again on every undo/resize.
 export function floodFill(
   ctx: CanvasRenderingContext2D,
   startX: number,
@@ -60,25 +64,45 @@ export function floodFill(
   if (colorDistance(data, startIdx, fr, fg, fb, fa) <= TOLERANCE) return;
 
   const visited = new Uint8Array(width * height);
-  const stack: number[] = [x0, y0];
+  const matches = (pixel: number) =>
+    !visited[pixel] && colorDistance(data, pixel * 4, targetR, targetG, targetB, targetA) <= TOLERANCE;
 
+  const stack: number[] = [y0 * width + x0];
   while (stack.length > 0) {
-    const y = stack.pop()!;
-    const x = stack.pop()!;
-    if (x < 0 || x >= width || y < 0 || y >= height) continue;
-    const pixelIndex = y * width + x;
-    if (visited[pixelIndex]) continue;
+    const seed = stack.pop()!;
+    if (!matches(seed)) continue;
+    const rowStart = seed - (seed % width);
+    const rowEnd = rowStart + width - 1;
+    let left = seed;
+    while (left > rowStart && matches(left - 1)) left--;
+    let right = seed;
+    while (right < rowEnd && matches(right + 1)) right++;
 
-    const i = pixelIndex * 4;
-    if (colorDistance(data, i, targetR, targetG, targetB, targetA) > TOLERANCE) continue;
+    let aboveSeeded = false;
+    let belowSeeded = false;
+    for (let pixel = left; pixel <= right; pixel++) {
+      visited[pixel] = 1;
+      const i = pixel * 4;
+      data[i] = fr;
+      data[i + 1] = fg;
+      data[i + 2] = fb;
+      data[i + 3] = fa;
 
-    visited[pixelIndex] = 1;
-    data[i] = fr;
-    data[i + 1] = fg;
-    data[i + 2] = fb;
-    data[i + 3] = fa;
-
-    stack.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+      const above = pixel - width;
+      if (above >= 0 && matches(above)) {
+        if (!aboveSeeded) stack.push(above);
+        aboveSeeded = true;
+      } else {
+        aboveSeeded = false;
+      }
+      const below = pixel + width;
+      if (below < visited.length && matches(below)) {
+        if (!belowSeeded) stack.push(below);
+        belowSeeded = true;
+      } else {
+        belowSeeded = false;
+      }
+    }
   }
 
   ctx.putImageData(imageData, 0, 0);
