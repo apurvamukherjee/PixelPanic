@@ -194,10 +194,10 @@ export function DrawingCanvas() {
     <div
       ref={containerRef}
       data-testid="drawing-canvas"
-      // shrink-0 keeps the 4:3 canvas from being squeezed by its flex column;
-      // on desktop its width is capped by the viewport height so the toolbar
-      // below it stays on screen.
-      className="relative mx-auto aspect-[4/3] w-full shrink-0 touch-none select-none overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] md:max-w-[calc((100dvh-19rem)*4/3)]"
+      // shrink-0 keeps the 4:3 canvas from being squeezed by its flex column.
+      // Its width is capped by the available height (--app-height shrinks
+      // when the phone keyboard opens) so the chat input below stays visible.
+      className="relative mx-auto aspect-[4/3] w-full shrink-0 touch-none select-none overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] max-w-[calc((var(--app-height,100dvh)-17rem)*4/3)] md:max-w-[calc((var(--app-height,100dvh)-19rem)*4/3)]"
       style={blurActive ? { filter: "blur(6px)" } : undefined}
     >
       <canvas ref={committedRef} className="absolute inset-0 h-full w-full" style={hideOwnCanvas ? { opacity: 0 } : undefined} />
