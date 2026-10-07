@@ -55,6 +55,7 @@ import { TournamentInstance, type TournamentHost } from "./TournamentInstance.js
 import { recordGameEndStats } from "../db/statsRepo.js";
 import { checkAndUnlockTitles } from "../db/titlesRepo.js";
 import { logger } from "../utils/logger.js";
+import { MAX_POINTS_PER_STROKE } from "../sockets/validate.js";
 
 const HINT_FREQUENCIES: HintFrequency[] = ["off", "slow", "normal", "fast"];
 const DEFAULT_TEAM_COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#eab308"];
@@ -1317,15 +1318,14 @@ export class RoomInstance implements TournamentHost {
   relayStrokePoint(socketId: string, payload: StrokePointPayload): void {
     if (!this.isCurrentDrawer(socketId)) return;
     const op = this.activeStrokeOps.get(payload.strokeId);
-    if (op) {
-      // Shape tools (rect/ellipse/arrow) resend their whole outline every
-      // frame instead of appending new points like a freehand stroke — see
-      // SHAPE_TOOLS. Storing them append-wise would corrupt this op's
-      // points for DRAW_SNAPSHOT (a mid-shape reconnect/join would replay
-      // every intermediate drag position concatenated into one scribble).
-      if (SHAPE_TOOLS.has(op.tool)) op.points = payload.points;
-      else op.points.push(...payload.points);
-    }
+    if (!op || op.points.length + payload.points.length > MAX_POINTS_PER_STROKE) return;
+    // Shape tools (rect/ellipse/arrow) resend their whole outline every
+    // frame instead of appending new points like a freehand stroke — see
+    // SHAPE_TOOLS. Storing them append-wise would corrupt this op's
+    // points for DRAW_SNAPSHOT (a mid-shape reconnect/join would replay
+    // every intermediate drag position concatenated into one scribble).
+    if (SHAPE_TOOLS.has(op.tool)) op.points = payload.points;
+    else op.points.push(...payload.points);
     this.broadcast(ServerEvents.DRAW_STROKE_POINT, payload);
   }
 
