@@ -31,9 +31,9 @@ const SIZE_MIN = 2;
 const SIZE_MAX = 40;
 
 const COLORS = [
-  "#f8fafc", "#ef4444", "#f97316", "#eab308",
+  "#000000", "#ef4444", "#f97316", "#eab308",
   "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6",
-  "#ec4899", "#000000",
+  "#ec4899", "#ffffff",
 ];
 
 export function Toolbar() {

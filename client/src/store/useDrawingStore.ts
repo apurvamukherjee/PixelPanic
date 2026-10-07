@@ -12,7 +12,7 @@ interface DrawingState {
 
 export const useDrawingStore = create<DrawingState>((set) => ({
   tool: "pencil",
-  color: "#f8fafc",
+  color: "#000000",
   size: 8,
   setTool: (tool) => set({ tool }),
   setColor: (color) => set({ color }),
