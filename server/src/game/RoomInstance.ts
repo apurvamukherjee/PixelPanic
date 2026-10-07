@@ -252,7 +252,9 @@ export class RoomInstance implements TournamentHost {
   // never the current turn's drawer), current scores, and whatever's been
   // drawn so far this turn (see committedOps/DRAW_SNAPSHOT).
   private catchUpNewcomer(playerId: string): void {
-    const turn = this.game.turn;
+    // game.turn lingers in "gameEnd" after a game finishes; a newcomer then
+    // has no final scoreboard to show, so they land in the lobby instead.
+    const turn = this.game.isGameActive ? this.game.turn : null;
     this.emitTo(playerId, ServerEvents.GAME_PHASE_CHANGE, { phase: turn?.phase ?? "lobby" });
     if (!turn) return;
 
