@@ -1,4 +1,4 @@
-import type { Server } from "socket.io";
+import type { Server, Socket } from "socket.io";
 import { RoomManager } from "../game/RoomManager.js";
 import { registerRoomHandlers } from "./roomHandlers.js";
 import { registerGameHandlers } from "./gameHandlers.js";
@@ -16,6 +16,7 @@ export function attachSocketHandlers(io: Server): RoomManager {
 
   io.on("connection", (socket) => {
     logger.info(`Socket connected: ${socket.id}`);
+    guardHandlers(socket);
 
     registerRoomHandlers(socket, roomManager);
     registerGameHandlers(socket, roomManager);
@@ -35,4 +36,19 @@ export function attachSocketHandlers(io: Server): RoomManager {
   });
 
   return roomManager;
+}
+
+// A throw inside a socket.io listener escapes to the process and kills it —
+// one malformed packet from any client would take down every room. Wrapping
+// at registration covers every handler file without repeating try/catch.
+function guardHandlers(socket: Socket): void {
+  const on = socket.on.bind(socket);
+  socket.on = ((event: string, handler: (...args: unknown[]) => void) =>
+    on(event, (...args: unknown[]) => {
+      try {
+        handler(...args);
+      } catch (err) {
+        logger.error(`Socket handler for "${event}" threw`, err);
+      }
+    })) as typeof socket.on;
 }
