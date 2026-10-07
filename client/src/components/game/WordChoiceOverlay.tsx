@@ -54,8 +54,8 @@ export function WordChoiceOverlay() {
   const choose = (word: string) => socket?.emit(ClientEvents.WORD_CHOOSE, { word });
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="glass flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-8">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
+      <div className="panel flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-8">
         {wordChoices ? (
           <>
             <div className="relative flex items-center justify-center">

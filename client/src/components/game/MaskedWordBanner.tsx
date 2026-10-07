@@ -88,7 +88,7 @@ export function MaskedWordBanner() {
   return (
     <div
       key={`${turn.roundIndex}-${turn.turnIndexInRound}`}
-      className="turn-reveal glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 md:gap-2 md:p-3"
+      className="turn-reveal panel flex flex-col gap-1.5 rounded-2xl px-3 py-2 md:gap-2 md:p-3"
     >
       {(turn.isBountyRound || turn.isMashupRound || turn.isReverseMode) && (
         <div className="flex flex-wrap justify-center gap-1.5">

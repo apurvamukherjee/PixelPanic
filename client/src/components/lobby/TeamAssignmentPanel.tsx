@@ -41,7 +41,7 @@ export function TeamAssignmentPanel() {
   };
 
   return (
-    <div className="glass flex flex-col gap-3 rounded-2xl p-4">
+    <div className="panel flex flex-col gap-3 rounded-2xl p-4">
       <div className="flex items-center justify-between">
         <div className="font-display text-sm font-bold uppercase tracking-wide text-on-surface-variant">
           Teams

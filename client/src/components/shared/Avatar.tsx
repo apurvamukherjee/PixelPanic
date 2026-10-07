@@ -12,7 +12,7 @@ interface AvatarProps {
 }
 
 const STATUS_RING: Record<NonNullable<AvatarProps["status"]>, string> = {
-  drawing: "border-primary shadow-[0_0_12px_rgba(221,183,255,0.4)]",
+  drawing: "border-primary",
   active: "border-secondary",
   idle: "border-outline/60",
 };

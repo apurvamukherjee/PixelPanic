@@ -30,7 +30,7 @@ export function TurnOrderStrip() {
   if (upcoming.length === 0) return null;
 
   return (
-    <div className="glass flex items-center gap-2 overflow-x-auto rounded-2xl px-3 py-2">
+    <div className="panel flex items-center gap-2 overflow-x-auto rounded-2xl px-3 py-2">
       <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/60">
         Up next
       </span>

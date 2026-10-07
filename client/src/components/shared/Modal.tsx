@@ -13,11 +13,11 @@ export function Modal({ open, onClose, children }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-md rounded-2xl p-5 shadow-2xl"
+        className="panel w-full max-w-md rounded-2xl p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

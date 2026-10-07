@@ -47,7 +47,7 @@ export function JoinByLinkRedirect({ code }: JoinByLinkRedirectProps) {
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
-      <div className="glass flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-8 text-center">
+      <div className="panel flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-8 text-center">
         <div>
           <h2 className="font-display text-xl font-bold text-on-surface">Join room {code}</h2>
           <p className="text-on-surface-variant">Enter a name to jump in.</p>

@@ -2,7 +2,7 @@
 // style icons (pencil, star, speech bubble, sparkle, paint drop) drifting
 // slowly behind the UI. Authored as inline SVG (no external asset pipeline,
 // no image library) and tiled via a CSS repeating background — low opacity
-// so it reads as texture behind the glass panels, not noise.
+// so it reads as texture behind the panel panels, not noise.
 const DOODLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
   <g fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M20 65 L48 37 L58 47 L30 75 Z M48 37 L58 47" />

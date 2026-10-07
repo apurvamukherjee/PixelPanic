@@ -84,7 +84,7 @@ export function Toolbar() {
   if (!isDrawer) return null;
 
   return (
-    <div className="glass flex flex-wrap items-center gap-2 rounded-2xl p-2 md:gap-3 md:p-3">
+    <div className="panel flex flex-wrap items-center gap-2 rounded-2xl p-2 md:gap-3 md:p-3">
       {paletteFrozen && (
         <div className="w-full rounded-lg bg-tertiary/20 px-3 py-1.5 text-center font-mono text-[10px] uppercase tracking-wide text-tertiary">
           Sabotaged! Your palette is frozen for a few seconds.
@@ -98,7 +98,7 @@ export function Toolbar() {
             title={`${t.label} (${t.key})`}
             className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
               tool === t.tool
-                ? "bg-primary text-on-primary shadow-[0_0_12px_rgba(221,183,255,0.4)]"
+                ? "bg-primary text-on-primary"
                 : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-variant"
             }`}
             aria-label={`${t.label} (${t.key})`}
@@ -186,7 +186,7 @@ export function Toolbar() {
           <Icon name="keyboard" />
         </button>
         {showShortcuts && (
-          <div className="round-row-in glass absolute bottom-11 right-0 z-10 flex w-52 flex-col gap-1.5 rounded-xl p-3 text-xs">
+          <div className="round-row-in panel absolute bottom-11 right-0 z-10 flex w-52 flex-col gap-1.5 rounded-xl p-3 text-xs">
             <div className="mb-0.5 font-display font-bold uppercase tracking-wide text-on-surface-variant">
               Shortcuts
             </div>

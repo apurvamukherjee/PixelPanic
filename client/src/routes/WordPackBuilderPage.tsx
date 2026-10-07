@@ -73,7 +73,7 @@ export function WordPackBuilderPage() {
 
       {loading && <div className="text-sm text-on-surface-variant">Loading…</div>}
       {!loading && packs.length === 0 && (
-        <div className="glass rounded-2xl p-4 text-sm text-on-surface-variant">
+        <div className="panel rounded-2xl p-4 text-sm text-on-surface-variant">
           You haven't created any word packs yet. New packs show up in the "Word list" dropdown
           when hosting a room.
         </div>
@@ -81,7 +81,7 @@ export function WordPackBuilderPage() {
 
       <div className="flex flex-col gap-2">
         {packs.map((pack) => (
-          <div key={pack.id} className="glass flex items-center justify-between rounded-xl px-4 py-3">
+          <div key={pack.id} className="panel flex items-center justify-between rounded-xl px-4 py-3">
             <div>
               <div className="font-display font-medium text-on-surface">{pack.name}</div>
               <div className="font-mono text-xs text-on-surface-variant">{pack.words.length} words</div>

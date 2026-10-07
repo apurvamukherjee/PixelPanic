@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.error) return this.props.children;
     return (
       <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6 text-center">
-        <div className="glass flex max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
+        <div className="panel flex max-w-sm flex-col items-center gap-3 rounded-3xl p-8">
           <h1 className="font-display text-xl font-bold text-error">Something went wrong</h1>
           <p className="text-sm text-on-surface-variant">
             Pixelpanic hit an unexpected error. Reloading usually fixes it — your room will still be

@@ -12,7 +12,7 @@ export function WaitingRoomList() {
       </div>
       <ul className="flex flex-col gap-2">
         {room.players.map((p) => (
-          <li key={p.id} className="player-join glass flex items-center gap-3 rounded-xl px-3 py-2">
+          <li key={p.id} className="player-join panel flex items-center gap-3 rounded-xl px-3 py-2">
             <Avatar name={p.name} color={p.color} avatarId={p.avatarId} status={p.connected ? undefined : "idle"} />
             <span className="font-display font-medium text-on-surface">{p.name}</span>
             {p.isHost && (

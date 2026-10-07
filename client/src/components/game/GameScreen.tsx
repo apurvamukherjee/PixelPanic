@@ -58,7 +58,7 @@ export function GameScreen() {
       </div>
 
       <div className="flex min-h-[7rem] flex-1 flex-col gap-2 md:h-full md:min-h-0">
-        <div className="glass flex shrink-0 gap-1 rounded-xl p-1 md:hidden">
+        <div className="panel flex shrink-0 gap-1 rounded-xl p-1 md:hidden">
           {(["chat", "players"] as const).map((tab) => (
             <button
               key={tab}

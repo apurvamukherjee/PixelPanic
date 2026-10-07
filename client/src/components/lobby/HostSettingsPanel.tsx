@@ -47,7 +47,7 @@ export function HostSettingsPanel() {
   if (!isHost) {
     const activeChaos = CHAOS_MODE_INFO.filter((c) => room.settings.chaosModes[c.key]).map((c) => c.label);
     return (
-      <div className="glass flex flex-col gap-1 rounded-2xl px-4 py-3 font-mono text-xs text-on-surface-variant">
+      <div className="panel flex flex-col gap-1 rounded-2xl px-4 py-3 font-mono text-xs text-on-surface-variant">
         <div>
           Draw time: <span className="text-secondary">{room.settings.drawTimeSec}s</span> · Rounds:{" "}
           <span className="text-secondary">{room.settings.roundCount}</span> · Hints:{" "}
@@ -89,7 +89,7 @@ export function HostSettingsPanel() {
   };
 
   return (
-    <div className="glass flex flex-col gap-4 rounded-2xl p-4">
+    <div className="panel flex flex-col gap-4 rounded-2xl p-4">
       <div className="font-display text-sm font-bold uppercase tracking-wide text-on-surface-variant">
         Host settings
       </div>

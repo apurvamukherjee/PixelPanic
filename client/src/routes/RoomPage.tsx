@@ -74,7 +74,7 @@ export function RoomPage() {
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-3 overflow-y-auto p-3 pt-4 md:grid md:grid-cols-[1fr_300px] md:gap-4 md:overflow-hidden md:p-4">
       <div className="flex min-h-0 flex-col gap-3 md:overflow-y-auto md:pr-1">
-        <div className="glass rounded-2xl p-6 text-center">
+        <div className="panel rounded-2xl p-6 text-center">
           <div className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
             Room code
           </div>
@@ -94,7 +94,7 @@ export function RoomPage() {
         <TeamAssignmentPanel />
       </div>
 
-      <div className="glass flex min-h-0 flex-col gap-3 rounded-2xl p-3 md:h-full">
+      <div className="panel flex min-h-0 flex-col gap-3 rounded-2xl p-3 md:h-full">
         <div className="min-h-0 flex-1 overflow-y-auto">
           <WaitingRoomList />
         </div>

@@ -39,7 +39,7 @@ export function AppHeader() {
 
   return (
     <div className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-start justify-between p-3">
-      <div className="pointer-events-auto glass rounded-full px-3 py-1.5">
+      <div className="pointer-events-auto panel rounded-full px-3 py-1.5">
         <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
           By <span className="text-secondary">Apurva</span>
         </span>
@@ -49,7 +49,7 @@ export function AppHeader() {
         <button
           title={muted ? "Unmute sound" : "Mute sound"}
           onClick={toggleMuted}
-          className="glass flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-secondary"
+          className="panel flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-secondary"
         >
           <Icon name={muted ? "volume_off" : "volume_up"} className="!text-base" />
         </button>
@@ -57,7 +57,7 @@ export function AppHeader() {
           <button
             title="Leave room"
             onClick={leaveRoom}
-            className="glass flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-error"
+            className="panel flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-error"
           >
             <Icon name="logout" className="!text-base" />
           </button>
@@ -65,11 +65,11 @@ export function AppHeader() {
         <button
           title={rival ? `Rival: ${rival.rivalName}` : "Your rival"}
           onClick={() => setPanelOpen((v) => !v)}
-          className="glass flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-tertiary"
+          className="panel flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-tertiary"
         >
           <Icon name="local_fire_department" className="!text-base" filled={!!rival?.rivalOnline} />
         </button>
-        <div className="glass rounded-full px-3 py-1.5">
+        <div className="panel rounded-full px-3 py-1.5">
           <span className="logo-wordmark font-display text-sm font-extrabold uppercase tracking-widest">
             Pixelpanic
           </span>
@@ -77,7 +77,7 @@ export function AppHeader() {
       </div>
 
       {panelOpen && (
-        <div className="pointer-events-auto glass absolute right-3 top-14 flex w-64 flex-col gap-3 rounded-2xl p-4">
+        <div className="pointer-events-auto panel absolute right-3 top-14 flex w-64 flex-col gap-3 rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <span className="font-display text-sm font-bold text-on-surface">Your rival</span>
             <button onClick={() => setPanelOpen(false)} className="text-on-surface-variant hover:text-error">

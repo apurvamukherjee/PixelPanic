@@ -30,7 +30,7 @@ export function CountdownBar({ totalSec }: CountdownBarProps) {
       <div className="h-2 w-full overflow-hidden rounded-full bg-surface-variant">
         <div
           className={`h-full rounded-full transition-[width] duration-200 ${
-            isUrgent ? "bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)]" : "bg-primary"
+            isUrgent ? "bg-error" : "bg-primary"
           }`}
           style={{ width: `${pct}%` }}
         />

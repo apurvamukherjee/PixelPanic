@@ -42,7 +42,7 @@ export function LeaderboardScreen() {
             {teamsRanked.map((team, i) => (
               <li
                 key={team.id}
-                className={`glass flex items-center gap-3 rounded-xl border px-4 py-3 ${RANK_STYLES[i] ?? "border-white/5"}`}
+                className={`panel flex items-center gap-3 rounded-xl border px-4 py-3 ${RANK_STYLES[i] ?? "border-white/5"}`}
               >
                 <span className="w-6 font-mono text-sm">#{i + 1}</span>
                 <span
@@ -67,7 +67,7 @@ export function LeaderboardScreen() {
             return (
               <li
                 key={entry.playerId}
-                className={`glass flex flex-col gap-1.5 rounded-xl border px-4 py-3 ${RANK_STYLES[i] ?? "border-white/5"}`}
+                className={`panel flex flex-col gap-1.5 rounded-xl border px-4 py-3 ${RANK_STYLES[i] ?? "border-white/5"}`}
               >
                 <div className="flex items-center gap-3">
                   {i < 3 ? (

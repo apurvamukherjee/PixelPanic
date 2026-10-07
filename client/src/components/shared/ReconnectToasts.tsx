@@ -65,7 +65,7 @@ export function ReconnectToasts() {
   return (
     <div className="pointer-events-none fixed left-1/2 top-16 z-40 flex -translate-x-1/2 flex-col items-center gap-2">
       {iAmReconnecting && (
-        <div className="glass round-end-pop flex items-center gap-2 rounded-full px-4 py-2 text-sm text-on-surface">
+        <div className="panel round-end-pop flex items-center gap-2 rounded-full px-4 py-2 text-sm text-on-surface">
           <Icon name="sync" className="!text-base animate-spin text-tertiary" />
           Reconnecting…
         </div>
@@ -73,7 +73,7 @@ export function ReconnectToasts() {
       {visible.map((p) => {
         const remainingSec = Math.max(0, Math.ceil((GRACE_MS - (Date.now() - p.disconnectedAt)) / 1000));
         return (
-          <div key={p.playerId} className="glass round-end-pop flex items-center gap-2 rounded-full px-4 py-2 text-sm text-on-surface">
+          <div key={p.playerId} className="panel round-end-pop flex items-center gap-2 rounded-full px-4 py-2 text-sm text-on-surface">
             <span className="h-2 w-2 shrink-0 rounded-full bg-error" />
             {p.name} disconnected — {remainingSec}s to reconnect
           </div>

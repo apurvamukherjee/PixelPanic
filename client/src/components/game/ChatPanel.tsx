@@ -102,7 +102,7 @@ export function ChatPanel() {
   };
 
   return (
-    <div className="glass flex h-full min-h-0 flex-col rounded-2xl">
+    <div className="panel flex h-full min-h-0 flex-col rounded-2xl">
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
         <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
           <Icon name="forum" className="!text-sm" /> Feed

@@ -35,7 +35,7 @@ export function GuessCorrectAnimation() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center">
-      <div className="guess-celebrate glass flex items-center gap-2 rounded-full border-success/40 bg-success/20 px-5 py-2.5">
+      <div className="guess-celebrate panel flex items-center gap-2 rounded-full border-success/40 bg-success/20 px-5 py-2.5">
         <Icon name="check_circle" filled className="!text-xl text-success" />
         <span className="font-display text-base font-bold text-success">Correct!</span>
         <span className="font-mono text-sm text-on-surface">+{pointsAwarded}</span>

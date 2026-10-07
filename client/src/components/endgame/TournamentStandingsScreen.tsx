@@ -16,14 +16,14 @@ export function TournamentStandingsScreen() {
       </h1>
 
       {!tournament.isComplete && currentMatch && (
-        <div className="glass flex items-center justify-center gap-2 rounded-xl border border-primary/30 px-4 py-3 text-center text-sm">
+        <div className="panel flex items-center justify-center gap-2 rounded-xl border border-primary/30 px-4 py-3 text-center text-sm">
           <Icon name="bolt" className="!text-base text-primary" />
           Now playing: <strong className="text-on-surface">{nameOf(currentMatch.playerAnonIds[0])}</strong> vs{" "}
           <strong className="text-on-surface">{nameOf(currentMatch.playerAnonIds[1])}</strong>
         </div>
       )}
 
-      <div className="glass overflow-x-auto rounded-2xl">
+      <div className="panel overflow-x-auto rounded-2xl">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/5 bg-surface-container-low text-left font-mono text-[10px] uppercase tracking-wide text-on-surface-variant">

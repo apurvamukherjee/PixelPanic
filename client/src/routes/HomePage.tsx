@@ -81,12 +81,12 @@ export function HomePage() {
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-secondary/10 blur-[100px]" />
 
       {closedReason && (
-        <div className="round-end-pop glass relative w-full max-w-sm rounded-2xl border border-tertiary/30 bg-tertiary/10 px-4 py-3 text-center text-sm text-tertiary">
+        <div className="round-end-pop panel relative w-full max-w-sm rounded-2xl border border-tertiary/30 bg-tertiary/10 px-4 py-3 text-center text-sm text-tertiary">
           {closedReason}
         </div>
       )}
 
-      <div className="glass relative flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl p-8 text-center">
+      <div className="panel relative flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl p-8 text-center">
         <div>
           <h1 className="font-display text-4xl font-extrabold uppercase tracking-tight text-primary">
             Pixelpanic

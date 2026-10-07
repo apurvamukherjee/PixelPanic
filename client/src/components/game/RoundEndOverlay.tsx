@@ -29,8 +29,8 @@ export function RoundEndOverlay() {
   const sorted = [...room.players].sort((a, b) => (delta[b.id] ?? 0) - (delta[a.id] ?? 0));
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="round-end-pop glass flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-6">
+    <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+      <div className="round-end-pop panel flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl p-6">
         <div className="text-center">
           <div className="font-mono text-xs uppercase tracking-widest text-on-surface-variant">The word was</div>
           <div className="font-display text-2xl font-extrabold capitalize text-primary">{lastRoundEnd.word}</div>
