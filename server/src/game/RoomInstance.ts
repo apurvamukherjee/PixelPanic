@@ -317,6 +317,7 @@ export class RoomInstance implements TournamentHost {
       return;
     }
     this.pushSystemChat(`${player!.name} left the room.`);
+    this.endTurnIfEveryoneGuessed();
     this.broadcastRoomState();
   }
 
@@ -343,15 +344,13 @@ export class RoomInstance implements TournamentHost {
     socket?.leave(this.room.id);
     if (player.teamId) socket?.leave(this.teamRoomKey(player.teamId));
 
-    if (this.game.turn?.phase === "drawing" && this.game.turn.drawerId === player.id) {
-      this.endTurn();
-    }
-
     if (player.isHost) {
       this.closeRoom(`${player.name} (the host) left — this room has closed.`);
       return;
     }
     this.pushSystemChat(`${player.name} left the room.`);
+    if (this.isActiveDrawer(player.id)) this.endTurn();
+    else this.endTurnIfEveryoneGuessed();
     this.broadcastRoomState();
   }
 
@@ -378,6 +377,23 @@ export class RoomInstance implements TournamentHost {
   // isEmpty() checks `connected`, not "does this room still have anyone").
   setOnClosed(cb: () => void): void {
     this.onClosedCallback = cb;
+  }
+
+  // Covers wordChoice too: a drawer removed mid-choice would otherwise get
+  // auto-assigned a word at the timeout and leave an undrawable turn.
+  private isActiveDrawer(playerId: string): boolean {
+    const turn = this.game.turn;
+    return !!turn && turn.drawerId === playerId && (turn.phase === "drawing" || turn.phase === "wordChoice");
+  }
+
+  // For permanent departures only (leave, kick, expired grace) — a guesser
+  // who leaves may have been the last one who hadn't guessed yet, which
+  // otherwise leaves everyone waiting out the full timer.
+  private endTurnIfEveryoneGuessed(): void {
+    const turn = this.game.turn;
+    if (turn?.phase !== "drawing") return;
+    const guessers = this.eligibleGuessers(turn.drawerId);
+    if (guessers.every((p) => turn.correctGuesserIds.includes(p.id))) this.endTurn();
   }
 
   isEmpty(): boolean {
@@ -1383,7 +1399,7 @@ export class RoomInstance implements TournamentHost {
     socket?.leave(this.room.id);
     socket?.disconnect(true);
 
-    const wasDrawer = this.game.turn?.phase === "drawing" && this.game.turn.drawerId === target.id;
+    const wasDrawer = this.isActiveDrawer(target.id);
     const wasHost = this.room.hostId === target.id;
 
     this.cancelGraceTimer(target.anonId);
@@ -1393,6 +1409,7 @@ export class RoomInstance implements TournamentHost {
 
     if (wasHost) this.transferHost();
     if (wasDrawer) this.endTurn();
+    else this.endTurnIfEveryoneGuessed();
     this.broadcastRoomState();
   }
 
