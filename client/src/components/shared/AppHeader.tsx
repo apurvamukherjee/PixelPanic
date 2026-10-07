@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClientEvents } from "@pixelpanic/shared";
 import { getAnonId } from "../../lib/anonId";
 import { useRivalStore } from "../../store/useRivalStore";
@@ -8,6 +8,7 @@ import { useConnectionStore } from "../../store/useConnectionStore";
 import { resetRoomScopedState } from "../../lib/resetRoomState";
 import { useAudioStore } from "../../store/useAudioStore";
 import { Icon } from "./Icon";
+import { Wordmark } from "./Wordmark";
 
 // Persistent chrome mounted once at the app root (outside the phase-
 // switching RoomPage/HomePage routes, see App.tsx) so it survives
@@ -20,6 +21,8 @@ export function AppHeader() {
   const room = useRoomStore((s) => s.room);
   const socket = useConnectionStore((s) => s.socket);
   const navigate = useNavigate();
+  // Home already shows the big wordmark.
+  const isHome = useLocation().pathname === "/";
   const sfxOn = useAudioStore((s) => s.sfxOn);
   const toggleMuted = useAudioStore((s) => s.toggleMuted);
   const muted = !sfxOn;
@@ -38,49 +41,41 @@ export function AppHeader() {
   };
 
   return (
-    <div className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-start justify-between p-3">
-      <div className="pointer-events-auto panel rounded-full px-3 py-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-          By <span className="text-secondary">Apurva</span>
-        </span>
+    <div className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-3">
+      <div className="flex items-baseline gap-2">
+        {!isHome && <Wordmark />}
+        {!isHome && (
+          <span className="hidden text-xs text-on-surface-variant sm:inline">by Apurva</span>
+        )}
       </div>
 
-      <div className="pointer-events-auto flex items-center gap-2">
-        <button
-          title={muted ? "Unmute sound" : "Mute sound"}
-          onClick={toggleMuted}
-          className="panel flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-secondary"
-        >
-          <Icon name={muted ? "volume_off" : "volume_up"} className="!text-base" />
-        </button>
-        {room && (
-          <button
-            title="Leave room"
-            onClick={leaveRoom}
-            className="panel flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-error"
-          >
-            <Icon name="logout" className="!text-base" />
-          </button>
-        )}
-        <button
-          title={rival ? `Rival: ${rival.rivalName}` : "Your rival"}
+      <div className="pointer-events-auto flex items-center gap-1.5">
+        <HeaderButton label={muted ? "Unmute sound" : "Mute sound"} onClick={toggleMuted}>
+          <Icon name={muted ? "volume_off" : "volume_up"} className="!text-xl" />
+        </HeaderButton>
+        <HeaderButton
+          label={rival ? `Rival: ${rival.rivalName}` : "Your rival"}
           onClick={() => setPanelOpen((v) => !v)}
-          className="panel flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:text-tertiary"
+          className="hover:text-tertiary"
         >
-          <Icon name="local_fire_department" className="!text-base" filled={!!rival?.rivalOnline} />
-        </button>
-        <div className="panel rounded-full px-3 py-1.5">
-          <span className="logo-wordmark font-display text-sm font-extrabold uppercase tracking-widest">
-            Pixelpanic
-          </span>
-        </div>
+          <Icon name="local_fire_department" className="!text-xl" filled={!!rival?.rivalOnline} />
+        </HeaderButton>
+        {room && (
+          <HeaderButton label="Leave room" onClick={leaveRoom} className="hover:text-error">
+            <Icon name="logout" className="!text-xl" />
+          </HeaderButton>
+        )}
       </div>
 
       {panelOpen && (
-        <div className="pointer-events-auto panel absolute right-3 top-14 flex w-64 flex-col gap-3 rounded-2xl p-4">
+        <div className="pointer-events-auto panel absolute right-3 top-full flex w-64 flex-col gap-3 rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <span className="font-display text-sm font-bold text-on-surface">Your rival</span>
-            <button onClick={() => setPanelOpen(false)} className="text-on-surface-variant hover:text-error">
+            <button
+              onClick={() => setPanelOpen(false)}
+              aria-label="Close"
+              className="text-on-surface-variant hover:text-error"
+            >
               <Icon name="close" className="!text-base" />
             </button>
           </div>
@@ -127,5 +122,28 @@ function RivalStatRow({ label, mine, theirs, suffix = "" }: { label: string; min
         </span>
       </div>
     </div>
+  );
+}
+
+function HeaderButton({
+  label,
+  onClick,
+  className = "",
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className={`flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-white/5 ${className}`}
+    >
+      {children}
+    </button>
   );
 }
