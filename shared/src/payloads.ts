@@ -2,7 +2,6 @@ import type { RoomVisibility, Room, RoomMode, Team, ChaosModes } from "./room.js
 import type { TurnState } from "./game.js";
 import type { ChatChannel } from "./chat.js";
 import type { TournamentState } from "./tournament.js";
-import type { RivalSummary } from "./rival.js";
 
 export interface RoomCreatePayload {
   visibility: RoomVisibility;
@@ -172,11 +171,6 @@ export interface TournamentStatePayload {
   tournament: TournamentState;
 }
 
-export interface TournamentMatchStartPayload {
-  matchId: string;
-  playerAnonIds: [string, string];
-}
-
 export interface TournamentCompletePayload {
   tournament: TournamentState;
 }
@@ -236,10 +230,6 @@ export interface MashupVoteResultPayload {
 }
 
 // ---- Phase 3: rival system (REST, not sockets — see /api/rivals) ----
-
-export interface RivalStatePayload {
-  rival: RivalSummary | null;
-}
 
 export interface RivalOnlineChangedPayload {
   rivalOnline: boolean;

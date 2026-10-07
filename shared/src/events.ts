@@ -56,7 +56,6 @@ export const ServerEvents = {
   MOD_VOTEKICK_UPDATE: "mod:votekickUpdate",
   MOD_MUTED: "mod:muted",
   TOURNAMENT_STATE: "tournament:state",
-  TOURNAMENT_MATCH_START: "tournament:matchStart",
   TOURNAMENT_COMPLETE: "tournament:complete",
   // Phase 3 — chaos modes
   NEAR_MISS: "chaos:nearMiss",
@@ -71,7 +70,6 @@ export const ServerEvents = {
   SABOTAGE_EFFECT_APPLIED: "sabotage:effectApplied",
   MASHUP_VOTE_RESULT: "mashup:voteResult",
   // Phase 3 — retention features
-  RIVAL_STATE: "rival:state",
   RIVAL_ONLINE_CHANGED: "rival:onlineChanged",
   // Broadcast live like/dislike tally for the current turn's drawing —
   // resets to {0, 0} at the start of every turn.

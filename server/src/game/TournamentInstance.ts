@@ -10,7 +10,6 @@ import { logger } from "../utils/logger.js";
 export interface TournamentHost {
   startMatch(anonA: string, anonB: string, onComplete: (scores: Record<string, number>) => void): void;
   broadcastTournamentState(tournament: TournamentState): void;
-  broadcastTournamentMatchStart(matchId: string, playerAnonIds: [string, string]): void;
   broadcastTournamentComplete(tournament: TournamentState): void;
 }
 
@@ -61,7 +60,6 @@ export class TournamentInstance {
 
     next.status = "active";
     this.currentMatchId = next.id;
-    this.host.broadcastTournamentMatchStart(next.id, next.playerAnonIds);
     this.host.broadcastTournamentState(this.getState());
     this.host.startMatch(next.playerAnonIds[0], next.playerAnonIds[1], (scores) =>
       this.onMatchComplete(next.id, scores)

@@ -659,10 +659,6 @@ export class RoomInstance implements TournamentHost {
     this.broadcast(ServerEvents.TOURNAMENT_STATE, { tournament });
   }
 
-  broadcastTournamentMatchStart(matchId: string, playerAnonIds: [string, string]): void {
-    this.broadcast(ServerEvents.TOURNAMENT_MATCH_START, { matchId, playerAnonIds });
-  }
-
   broadcastTournamentComplete(tournament: TournamentState): void {
     this.tournament = null;
     this.broadcast(ServerEvents.TOURNAMENT_COMPLETE, { tournament });
