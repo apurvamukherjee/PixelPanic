@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClientEvents } from "@pixelpanic/shared";
 import { useConnectionStore } from "../store/useConnectionStore";
 import { useRoomStore } from "../store/useRoomStore";
@@ -22,6 +22,18 @@ export function JoinByLinkRedirect({ code }: JoinByLinkRedirectProps) {
   useEffect(() => {
     if (lastError) setJoining(false);
   }, [lastError]);
+
+  // A reload of /room/CODE (mobile browsers discard background tabs all the
+  // time) lands here with an empty store. With a saved name, rejoin straight
+  // away so the player is back inside the server's 20s reconnect grace
+  // window instead of sitting on a name prompt. Errors fall back to the form.
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (autoJoined.current || !getSavedName().trim()) return;
+    autoJoined.current = true;
+    join();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const join = () => {
     const trimmed = name.trim();
@@ -49,7 +61,7 @@ export function JoinByLinkRedirect({ code }: JoinByLinkRedirectProps) {
         />
         {lastError && <div className="text-sm text-error">{lastError.message}</div>}
         <Button className="w-full" onClick={join} disabled={!name.trim() || joining}>
-          Join room
+          {joining ? "Joining…" : "Join room"}
         </Button>
       </div>
     </div>
