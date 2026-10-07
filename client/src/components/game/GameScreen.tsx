@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MaskedWordBanner } from "./MaskedWordBanner";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { Toolbar } from "./Toolbar";
@@ -15,6 +15,28 @@ type MobileTab = "players" | "chat";
 
 export function GameScreen() {
   const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
+
+  // Phones dim and lock mid-turn while someone is just watching the drawing.
+  // The lock is dropped by the browser whenever the tab is hidden, so it's
+  // re-requested on return. Unsupported or denied (battery saver) is fine.
+  useEffect(() => {
+    let lock: WakeLockSentinel | null = null;
+    const request = () => {
+      if (document.visibilityState !== "visible" || !navigator.wakeLock) return;
+      navigator.wakeLock
+        .request("screen")
+        .then((sentinel) => {
+          lock = sentinel;
+        })
+        .catch((err: unknown) => console.warn("Screen wake lock unavailable", err));
+    };
+    request();
+    document.addEventListener("visibilitychange", request);
+    return () => {
+      document.removeEventListener("visibilitychange", request);
+      void lock?.release();
+    };
+  }, []);
 
   // Phones: one scrolling column where the canvas never shrinks (it used to
   // get squeezed to a sliver by flex shrink) and players/chat share the
