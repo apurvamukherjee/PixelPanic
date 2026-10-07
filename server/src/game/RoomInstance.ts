@@ -82,6 +82,9 @@ export class RoomInstance implements TournamentHost {
   private wordSelector: WordSelector;
   private rotationAnonIds: string[] = [];
   private currentTurnStrokeIds: string[] = [];
+  // The three words actually offered this turn — chooseWord only accepts one
+  // of these, and a drawer reconnecting mid-choice gets them re-sent.
+  private wordChoices: WordChoicesPayload | null = null;
   // Mirrors the client's own StrokeRenderer.committed (remoteStrokeRenderer.ts)
   // so a mid-game joiner or reconnecting player can be caught up — see
   // catchUpNewcomer(). activeStrokeOps holds in-progress (not yet ended)
@@ -246,6 +249,11 @@ export class RoomInstance implements TournamentHost {
     const turn = this.game.turn;
     this.emitTo(playerId, ServerEvents.GAME_PHASE_CHANGE, { phase: turn?.phase ?? "lobby" });
     if (!turn) return;
+
+    if (turn.phase === "wordChoice" && turn.drawerId === playerId && this.wordChoices) {
+      this.emitTo(playerId, ServerEvents.WORD_CHOICES, this.wordChoices);
+      return;
+    }
 
     this.emitTo(playerId, ServerEvents.TURN_START, {
       turn: { ...turn, word: turn.isReverseMode ? turn.word : null },
@@ -717,10 +725,8 @@ export class RoomInstance implements TournamentHost {
     // drawer manually hit Clear.
     this.broadcast(ServerEvents.DRAW_CLEAR, {});
 
-    this.emitTo(drawer.id, ServerEvents.WORD_CHOICES, {
-      words: [w1, w2, w3],
-      deadline,
-    } satisfies WordChoicesPayload);
+    this.wordChoices = { words: [w1, w2, w3], deadline };
+    this.emitTo(drawer.id, ServerEvents.WORD_CHOICES, this.wordChoices);
     this.broadcast(ServerEvents.GAME_PHASE_CHANGE, { phase: "wordChoice" });
 
     const timeout = setTimeout(() => {
@@ -732,6 +738,8 @@ export class RoomInstance implements TournamentHost {
   chooseWord(requesterId: string, word: string): void {
     const turn = this.game.turn;
     if (!turn || turn.phase !== "wordChoice" || turn.drawerId !== requesterId) return;
+    if (!this.wordChoices?.words.includes(word)) return;
+    this.wordChoices = null;
 
     this.wordSelector.markUsed(word);
     const drawTimeSec = this.room.settings.drawTimeSec;
